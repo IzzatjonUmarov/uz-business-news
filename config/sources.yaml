@@ -1,0 +1,145 @@
+# Источники для мониторинга.
+#
+# Поля:
+#   id        — уникальный ключ (латиница), используется в базе "уже отправлено"
+#   name      — как подписывать источник в посте
+#   group     — gov | regulator | bank | market | invest | media  (влияет на хэштеги)
+#   url       — страница со списком новостей ИЛИ RSS-лента
+#   type      — rss | html | auto (по умолчанию auto: сначала ищем RSS на странице, потом парсим HTML)
+#   selectors — (необязательно) CSS-селекторы, если автопарсинг ошибается:
+#                 item:  блок одной новости
+#                 link:  ссылка внутри блока (по умолчанию первый <a>)
+#                 title: заголовок внутри блока (по умолчанию текст ссылки)
+#   link_pattern — (необязательно) regex, которому должен соответствовать URL новости
+#   enabled   — false, чтобы временно выключить
+#
+# Адреса разделов на сайтах периодически меняются. После правок запускайте:
+#   python -m bot check            — покажет, сколько новостей нашлось в каждом источнике
+#   python -m bot check --id cbu   — подробно по одному источнику
+
+sources:
+  # ── Госорганы ───────────────────────────────────────────────
+  - id: president
+    name: Пресс-служба Президента
+    group: gov
+    url: https://president.uz/ru/lists/news
+    link_pattern: /ru/lists/view/\d+
+
+  - id: gov
+    name: Правительственный портал gov.uz
+    group: gov
+    url: https://gov.uz/ru/news
+
+  - id: mfa
+    name: МИД Узбекистана
+    group: gov
+    url: https://mfa.uz/ru/press/news
+    link_pattern: /ru/press/news/\d+
+
+  - id: imv
+    name: Министерство экономики и финансов
+    group: gov
+    url: https://imv.uz/ru/news
+
+  - id: miit
+    name: Министерство инвестиций, промышленности и торговли
+    group: invest
+    url: https://miit.uz/ru/news
+
+  - id: invest
+    name: Агентство по продвижению инвестиций (invest.gov.uz)
+    group: invest
+    url: https://invest.gov.uz/ru/mediacenter/news/
+
+  - id: stat
+    name: Национальный комитет по статистике
+    group: gov
+    url: https://stat.uz/ru/press-sluzhba/novosti-goskomstata
+
+  - id: soliq
+    name: Налоговый комитет
+    group: gov
+    url: https://soliq.uz/press/news?lang=ru
+
+  - id: customs
+    name: Таможенный комитет
+    group: gov
+    url: https://customs.uz/ru/news
+
+  - id: raqobat
+    name: Комитет по развитию конкуренции
+    group: regulator
+    url: https://raqobat.uz/ru/news/
+
+  - id: digital
+    name: Министерство цифровых технологий
+    group: gov
+    url: https://digital.uz/ru/news
+
+  - id: minenergy
+    name: Министерство энергетики
+    group: gov
+    url: https://minenergy.uz/ru/news
+
+  - id: agro
+    name: Министерство сельского хозяйства
+    group: gov
+    url: https://agro.uz/ru/news
+
+  - id: itpark
+    name: IT Park Uzbekistan
+    group: invest
+    url: https://it-park.uz/ru/news
+
+  - id: chamber
+    name: Торгово-промышленная палата
+    group: gov
+    url: https://chamber.uz/ru/news
+
+  - id: uza
+    name: УзА — Национальное информагентство
+    group: media
+    url: https://uza.uz/ru/posts
+
+  # ── Регулятор и рынок ───────────────────────────────────────
+  - id: cbu
+    name: Центральный банк
+    group: regulator
+    url: https://cbu.uz/ru/press_center/news/
+    link_pattern: /ru/press_center/news/\d+
+
+  - id: cbu_press
+    name: Центральный банк — пресс-релизы
+    group: regulator
+    url: https://cbu.uz/ru/press_center/releases/
+    link_pattern: /ru/press_center/releases/\d+
+
+  - id: uzse
+    name: Республиканская фондовая биржа «Тошкент»
+    group: market
+    url: https://uzse.uz/news?locale=ru
+
+  # ── Банки ───────────────────────────────────────────────────
+  - {id: nbu,        name: НБУ (Национальный банк),  group: bank, url: "https://nbu.uz/ru/news/"}
+  - {id: sqb,        name: SQB (Узпромстройбанк),    group: bank, url: "https://sqb.uz/ru/news/"}
+  - {id: asaka,      name: Асакабанк,                group: bank, url: "https://asakabank.uz/ru/news"}
+  - {id: agrobank,   name: Агробанк,                 group: bank, url: "https://agrobank.uz/ru/press-center/news"}
+  - {id: xb,         name: Халк банк,                group: bank, url: "https://xb.uz/ru/news"}
+  - {id: ipoteka,    name: Ипотека-банк,             group: bank, url: "https://www.ipotekabank.uz/ru/press/news/"}
+  - {id: mkbank,     name: Микрокредитбанк,          group: bank, url: "https://mkbank.uz/ru/press-center/news/"}
+  - {id: aloqabank,  name: Алокабанк,                group: bank, url: "https://aloqabank.uz/ru/news"}
+  - {id: turonbank,  name: Туронбанк,                group: bank, url: "https://turonbank.uz/ru/news/"}
+  - {id: kapitalbank, name: Капиталбанк,             group: bank, url: "https://kapitalbank.uz/ru/about/news/"}
+  - {id: hamkorbank, name: Хамкорбанк,               group: bank, url: "https://hamkorbank.uz/ru/news/"}
+  - {id: ipakyuli,   name: Ипак Йули банк,           group: bank, url: "https://ipakyulibank.uz/ru/press-center/news"}
+  - {id: ofb,        name: Orient Finans Bank,       group: bank, url: "https://ofb.uz/ru/news/"}
+  - {id: infinbank,  name: InFinBank,                group: bank, url: "https://www.infinbank.com/ru/news/"}
+  - {id: davrbank,   name: Давр банк,                group: bank, url: "https://davrbank.uz/ru/news"}
+  - {id: trustbank,  name: Трастбанк,                group: bank, url: "https://trustbank.uz/ru/news/"}
+  - {id: tbc,        name: TBC Bank Uzbekistan,      group: bank, url: "https://tbcbank.uz/ru/news/"}
+  - {id: anorbank,   name: Anorbank,                 group: bank, url: "https://anorbank.uz/ru/news/"}
+  - {id: uzumbank,   name: Uzum Bank,                group: bank, url: "https://uzumbank.uz/ru/news"}
+  - {id: octobank,   name: Octobank,                 group: bank, url: "https://octobank.uz/ru/news"}
+  - {id: tengebank,  name: Tenge Bank,               group: bank, url: "https://tengebank.uz/ru/news"}
+  - {id: garantbank, name: Garant Bank,              group: bank, url: "https://garantbank.uz/ru/news"}
+  - {id: kdb,        name: KDB Bank Uzbekistan,      group: bank, url: "https://kdb.uz/ru/news"}

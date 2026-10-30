@@ -1,0 +1,39 @@
+name: Публикация новостей
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # каждые 30 минут (UTC)
+  workflow_dispatch: {}
+
+concurrency:
+  group: news
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Сбор и публикация
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AI_MODEL: ${{ vars.AI_MODEL || 'claude-opus-5-5' }}
+          MIN_IMPORTANCE: ${{ vars.MIN_IMPORTANCE || '3' }}
+        run: python -m bot run --with-rates
+      - name: Сохранить список отправленного
+        run: |
+          git config user.name "news-bot"
+          git config user.email "news-bot@users.noreply.github.com"
+          git add data/state.json
+          git diff --cached --quiet || (git commit -m "state: обновление" && git push)
