@@ -25,6 +25,7 @@ CATEGORY_EMOJI = {
 }
 GROUP_EMOJI = {"gov": "🏛", "regulator": "🏦", "bank": "🏦", "market": "📉", "invest": "💼", "media": "📰"}
 TELEGRAM_LIMIT = 4096
+CAPTION_LIMIT = 1024  # подпись к фото в Telegram короче обычного сообщения
 
 
 def _tag(text: str) -> str:
@@ -36,7 +37,7 @@ def _source_tag(item: NewsItem) -> str:
     return _tag(item.source_id)
 
 
-def build_post(item: NewsItem, review: dict | None = None) -> str:
+def build_post(item: NewsItem, review: dict | None = None, limit: int = TELEGRAM_LIMIT) -> str:
     e = html.escape
     if review:
         emoji = CATEGORY_EMOJI.get(review.get("category", ""), "📰")
@@ -61,8 +62,10 @@ def build_post(item: NewsItem, review: dict | None = None) -> str:
         parts.append(tags)
     text = "\n\n".join(parts)
 
-    if len(text) > TELEGRAM_LIMIT and body:
-        overflow = len(text) - TELEGRAM_LIMIT + 1
-        parts[1] = e(body[: max(0, len(body) - overflow - 10)].rsplit(" ", 1)[0] + "…")
-        text = "\n\n".join(parts)
-    return text
+    while len(text) > limit and body:
+        # укорачиваем пересказ по словам, пока пост не влезет в лимит
+        cut = max(0, len(body) - (len(text) - limit) - 10)
+        body = body[:cut].rsplit(" ", 1)[0].rstrip(" ,.;:—-") if cut else ""
+        parts[1] = e(body + "…") if body else None
+        text = "\n\n".join(p for p in parts if p)
+    return text[:limit]

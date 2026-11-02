@@ -21,8 +21,9 @@ import httpx
 
 from .ai import Editor
 from .config import Settings, Source, load_sources
-from .fetch import NewsItem, enrich, fetch_source, make_client
-from .format import build_post
+from .fetch import NewsItem, enrich, fetch_source, first_paragraph, make_client
+from .format import CAPTION_LIMIT, TELEGRAM_LIMIT, build_post
+from .images import build_image
 from .rates import build_rates_post, fetch_rates
 from .state import State
 from .telegram import Telegram, TelegramError, make_publisher
@@ -44,6 +45,35 @@ def collect(settings: Settings, sources: list[Source]) -> dict[str, list[NewsIte
         for source_id, result in pool.map(work, sources):
             results[source_id] = result
     return results
+
+
+def _generic_images(state: State, item: NewsItem) -> set[str]:
+    """Картинка, которая встречается у разных новостей, — заглушка сайта (логотип, баннер), а не фото."""
+    owners: dict = state.meta.setdefault("image_owner", {})
+    generic: list = state.meta.setdefault("generic_images", [])
+    for url in [item.image, *item.extra.get("content_images", [])]:
+        if not url:
+            continue
+        owner = owners.get(url)
+        if owner and owner != item.url and url not in generic:
+            generic.append(url)
+        owners.setdefault(url, item.url)
+    if len(owners) > 5000:
+        state.meta["image_owner"] = dict(list(owners.items())[-3000:])
+    return set(generic)
+
+
+def _drop_repeated_summary(state: State, item: NewsItem) -> None:
+    """Одинаковое описание у разных новостей одного сайта — шаблон, заменяем первым абзацем текста."""
+    if not item.summary:
+        return
+    owners: dict = state.meta.setdefault("summary_owner", {})
+    key = f"{item.source_id}:{item.summary[:200]}"
+    owner = owners.setdefault(key, item.url)
+    if owner != item.url:
+        item.summary = first_paragraph(item.text, item.title)
+    if len(owners) > 5000:
+        state.meta["summary_owner"] = dict(list(owners.items())[-3000:])
 
 
 def run_once(settings: Settings, dry_run: bool, only: str | None = None) -> int:
@@ -92,12 +122,30 @@ def run_once(settings: Settings, dry_run: bool, only: str | None = None) -> int:
                 log.info("  пропуск (значимость %d): %s", review["importance"], item.title[:80])
                 state.mark(item.url)
                 continue
-            post = build_post(item, review)
+            _drop_repeated_summary(state, item)
+            image = None
+            if settings.images_enabled:
+                generic = _generic_images(state, item)
+                try:
+                    image = build_image(client, item, settings.watermark,
+                                        review.get("headline") if review else None, generic)
+                except Exception as exc:  # noqa: BLE001 — без картинки пост всё равно уйдёт
+                    log.warning("Не удалось подготовить картинку для %s: %s", item.url, exc)
+            post = build_post(item, review, CAPTION_LIMIT if image else TELEGRAM_LIMIT)
             if dry_run:
-                print("\n" + "─" * 70 + "\n" + post)
+                note = ""
+                if image:
+                    path = settings.preview_file.parent / "preview_images" / f"dry_{posted}.jpg"
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(image)
+                    note = f"[картинка: {path}]\n"
+                print("\n" + "─" * 70 + "\n" + note + post)
             else:
                 try:
-                    telegram.send_message(post, preview_url=item.url)
+                    if image:
+                        telegram.send_photo(image, post)
+                    else:
+                        telegram.send_message(post, preview_url=item.url)
                 except TelegramError as exc:
                     log.error("Не удалось отправить %s: %s", item.url, exc)
                     continue
@@ -180,6 +228,8 @@ def main(argv: list[str] | None = None) -> int:
         print("Сообщение отправлено")
         return 0
 
+    if settings.images_enabled and not settings.watermark.enabled:
+        log.warning("Водяной знак не задан: укажите WATERMARK_TEXT или TELEGRAM_CHAT_ID вида @канал")
     if not settings.ai_active:
         log.info("ИИ-пересказ выключен (нет ANTHROPIC_API_KEY) — публикую заголовок и описание со страницы")
     while True:

@@ -239,6 +239,7 @@
   "https://gov.uz/ru/mintrans/news/view/240764": 1793625313.5658202,
   "https://gov.uz/ru/mintrans/news/view/241391": 1793625313.56582,
   "https://gov.uz/ru/mintrans/news/view/241458": 1793625313.5658205,
+  "https://gov.uz/ru/mintrans/news/view/241482": 1793625845.770771,
   "https://gov.uz/ru/news/view/236364": 1793625313.5652902,
   "https://gov.uz/ru/news/view/236803": 1793625313.56529,
   "https://gov.uz/ru/news/view/236844": 1793625313.5652895,
@@ -750,6 +751,12 @@
   "https://mkbank.uz/ru/press_center/news/mkbankdan-tadbirkorlar-uchun-10-mlrd-so-mgacha-kredit-mahallaga-ko-mak-imkoniyatlari": 1793625313.56646,
   "https://mkbank.uz/ru/press_center/news/pul-o-tkazish-bepul-bo-lsa-nega-foydalanmaslik-kerak": 1793625313.5664642,
   "https://mkbank.uz/ru/press_center/news/texnik-sozlash-ishlari-amalga-oshiriladi": 1793625313.5664592,
+  "https://nbu.uz/ru/novosti/ao-uznacbank-priglasaet-k-priamoi-realizacii-obieekta-imushhestva28_10_1": 1793625844.844999,
+  "https://nbu.uz/ru/novosti/ao-uznacbank-priglasaet-k-priamoi-realizacii-obieekta-imushhestva2_11": 1793625844.8449974,
+  "https://nbu.uz/ru/novosti/profilakticeskie-raboty-v-bankomatax19_10": 1793625844.845,
+  "https://nbu.uz/ru/novosti/profilakticeskie-raboty-v-bankomatax27_10_1": 1793625844.8449998,
+  "https://nbu.uz/ru/novosti/uvazaemye-klienty-ao-uznacbank21_10": 1793625844.845,
+  "https://nbu.uz/ru/novosti/uvazaemye-klienty-banka-i-predprinimateli": 1793625844.8449986,
   "https://octobank.uz/ru/press-tsentr/octobank-ekvayringi-orqali-apple-pay-va-google-pay": 1793625313.5670183,
   "https://octobank.uz/ru/press-tsentr/octobank-ozbekistonda-jismoniy-shaxslarga-apple-pay-xizmatidan-foydalanish-imkoniyatini-taqdim-etgan-ilk-banklardan-biri-boldi": 1793625313.5670185,
   "https://octobank.uz/ru/press-tsentr/telefoningizga-birin-ketin-sms-kodlar-kelyaptimi-ehtiyot-boling": 1793625313.567018,
@@ -955,249 +962,250 @@
   "adliya": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.565917,
+   "last_check": 1793625844.8446238,
    "last_error": null,
    "last_found": 12
   },
   "agro": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5657697,
+   "last_check": 1793625844.8444395,
    "last_error": null,
    "last_found": 12
   },
   "aloqabank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.566519,
+   "last_check": 1793625844.8452168,
    "last_error": null,
    "last_found": 7
   },
   "cbu": {
-   "fail_streak": 1,
-   "last_check": 1793625313.566146,
+   "fail_streak": 2,
+   "last_check": 1793625844.8448129,
    "last_error": "[Errno 104] Connection reset by peer",
    "last_found": 0
   },
   "cbu_press": {
-   "fail_streak": 1,
-   "last_check": 1793625313.566192,
+   "fail_streak": 2,
+   "last_check": 1793625844.8448582,
    "last_error": "[Errno 104] Connection reset by peer",
    "last_found": 0
   },
   "davaktiv": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.565558,
+   "last_check": 1793625844.8442485,
    "last_error": null,
    "last_found": 12
   },
   "davrbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5668387,
+   "last_check": 1793625844.8455267,
    "last_error": null,
    "last_found": 44
   },
   "digital": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5656683,
+   "last_check": 1793625844.844344,
    "last_error": null,
    "last_found": 12
   },
   "garantbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5671387,
+   "last_check": 1793625844.8458083,
    "last_error": null,
    "last_found": 91
   },
   "gov": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5652838,
+   "last_check": 1793625844.8440325,
    "last_error": null,
    "last_found": 12
   },
   "hamkorbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5666153,
+   "last_check": 1793625844.84531,
    "last_error": null,
    "last_found": 9
   },
   "infinbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5667825,
+   "last_check": 1793625844.8454652,
    "last_error": null,
    "last_found": 7
   },
   "invest": {
-   "fail_streak": 0,
+   "fail_streak": 1,
    "initialized": true,
-   "last_check": 1793625313.5660424,
-   "last_error": null,
-   "last_found": 12
+   "last_check": 1793625844.8447125,
+   "last_error": "[Errno 104] Connection reset by peer",
+   "last_found": 0
   },
   "ipakyuli": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5666714,
+   "last_check": 1793625844.8453727,
    "last_error": null,
    "last_found": 40
   },
   "ipoteka": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5663993,
+   "last_check": 1793625844.8451142,
    "last_error": null,
    "last_found": 20
   },
   "kdb": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.56728,
+   "last_check": 1793625844.8460112,
    "last_error": null,
    "last_found": 410
   },
   "mfa": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.56537,
+   "last_check": 1793625844.8440967,
    "last_error": null,
    "last_found": 12
   },
   "miit": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5654314,
+   "last_check": 1793625844.8441477,
    "last_error": null,
    "last_found": 12
   },
   "minenergy": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5657175,
+   "last_check": 1793625844.8443935,
    "last_error": null,
    "last_found": 12
   },
   "mintrans": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5658188,
+   "last_check": 1793625844.8444874,
    "last_error": null,
    "last_found": 12
   },
   "mkbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5664577,
+   "last_check": 1793625844.845168,
    "last_error": null,
    "last_found": 20
   },
   "nbu": {
-   "fail_streak": 1,
-   "last_check": 1793625313.5662959,
-   "last_error": "[Errno 104] Connection reset by peer",
-   "last_found": 0
+   "fail_streak": 0,
+   "initialized": true,
+   "last_check": 1793625844.8449943,
+   "last_error": null,
+   "last_found": 6
   },
   "octobank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5670166,
+   "last_check": 1793625844.8456721,
    "last_error": null,
    "last_found": 3
   },
   "ofb": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5667353,
+   "last_check": 1793625844.8454177,
    "last_error": null,
    "last_found": 5
   },
   "president": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5650685,
+   "last_check": 1793625844.8437805,
    "last_error": null,
    "last_found": 15
   },
   "raqobat": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5656126,
+   "last_check": 1793625844.8442965,
    "last_error": null,
    "last_found": 12
   },
   "soliq": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5654917,
+   "last_check": 1793625844.844198,
    "last_error": null,
    "last_found": 12
   },
   "sqb": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5663433,
+   "last_check": 1793625844.845057,
    "last_error": null,
    "last_found": 18
   },
   "stat": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5660965,
+   "last_check": 1793625844.8447695,
    "last_error": null,
    "last_found": 18
   },
   "tbc": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5669448,
+   "last_check": 1793625844.845628,
    "last_error": null,
    "last_found": 10
   },
   "tengebank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.567066,
+   "last_check": 1793625844.845723,
    "last_error": null,
    "last_found": 18
   },
   "trustbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5668957,
+   "last_check": 1793625844.8455803,
    "last_error": null,
    "last_found": 13
   },
   "turonbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.566568,
+   "last_check": 1793625844.8452601,
    "last_error": null,
    "last_found": 3
   },
   "uzatom": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5659862,
+   "last_check": 1793625844.8446705,
    "last_error": null,
    "last_found": 12
   },
   "uzbektourism": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.5658684,
+   "last_check": 1793625844.8445346,
    "last_error": null,
    "last_found": 12
   },
   "uzse": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625313.566248,
+   "last_check": 1793625844.844948,
    "last_error": null,
    "last_found": 30
   }

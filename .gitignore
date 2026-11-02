@@ -7,3 +7,4 @@ data/*.tmp
 data/bot.log
 data/bot.pid
 data/preview_posts.txt
+samples/

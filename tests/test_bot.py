@@ -105,6 +105,11 @@ def test_run_once_initializes_then_posts(tmp_path, monkeypatch):
         def send_message(self, html, preview_url=None):
             sent.append(html)
 
+        def send_photo(self, jpeg, caption):
+            assert jpeg[:2] == b"\xff\xd8"  # JPEG
+            assert len(caption) <= 1024
+            sent.append(caption)
+
     monkeypatch.setattr(cli, "make_publisher", lambda settings: FakeTelegram())
     settings = Settings(telegram_token="t", telegram_chat_id="c", anthropic_api_key="", sources_file=sources_file,
                         state_file=tmp_path / "state.json", post_delay_seconds=0, max_age_days=10_000)
@@ -148,3 +153,50 @@ def test_govuz_source():
     assert item.published.utcoffset().total_seconds() == 5 * 3600
     enrich(client, item)
     assert item.summary.startswith("Первый раунд")
+
+
+def _jpeg_size(data: bytes):
+    from PIL import Image
+    import io
+    return Image.open(io.BytesIO(data)).size
+
+
+def test_images_card_photo_and_watermark():
+    import io
+    from PIL import Image
+    from bot.images import WatermarkConfig, apply_watermark, build_image, is_generic
+
+    assert is_generic("https://aloqabank.uz/upload/media/images/social.png")
+    assert is_generic("https://garantbank.uz/assets/img/logo%20600x600.jpg")
+    assert not is_generic("https://api-portal.gov.uz/uploads/1/2026/news_.jpg")
+
+    photo = Image.new("RGB", (900, 600), (90, 120, 150))
+    buf = io.BytesIO(); photo.save(buf, "PNG")
+    png = buf.getvalue()
+    client = httpx.Client(transport=httpx.MockTransport(
+        lambda r: httpx.Response(200, content=png) if r.url.path == "/photo.png" else httpx.Response(404)))
+    item = NewsItem("testbank", "Тест Банк", "bank", "https://bank.uz/ru/news/1",
+                    "Банк запустил новый онлайн-депозит со ставкой 22% годовых", image="https://bank.uz/photo.png")
+    wm = WatermarkConfig(text="@my_channel")
+    assert _jpeg_size(build_image(client, item, wm)) == (900, 600)       # фото новости
+    item.image = "https://bank.uz/logo.png"
+    assert _jpeg_size(build_image(client, item, wm)) == (1280, 720)      # заглушка → карточка
+    marked = apply_watermark(photo, wm)
+    assert marked.getpixel((880, 580)) != photo.getpixel((880, 580))     # плашка в углу
+
+
+def test_repeated_image_is_generic(tmp_path):
+    state = State(tmp_path / "s.json")
+    a = NewsItem("b", "B", "bank", "https://b.uz/1", "x" * 30, image="https://b.uz/same.jpg")
+    b = NewsItem("b", "B", "bank", "https://b.uz/2", "y" * 30, image="https://b.uz/same.jpg")
+    assert cli._generic_images(state, a) == set()
+    assert cli._generic_images(state, b) == {"https://b.uz/same.jpg"}
+
+
+def test_boilerplate_descriptions():
+    from bot.fetch import first_paragraph, is_boilerplate
+    assert is_boilerplate("Узнайте первым о последних новостях, обновлениях и достижениях Aloqabank")
+    assert is_boilerplate("statistika, Uzstat, статистика, YaIM, inflyatsiya indeksi, palov indeksi, statistics")
+    assert not is_boilerplate("Ставка по депозиту составит 22% годовых, минимальная сумма — 1 млн сумов.")
+    text = "Короткая строка\nПо предварительным данным Госкомстата, в январе-сентябре выловлено 270,8 тысячи тонн рыбы."
+    assert first_paragraph(text).startswith("По предварительным")

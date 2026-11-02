@@ -52,6 +52,26 @@ class Settings:
         default_factory=lambda: Path(os.getenv("PREVIEW_FILE", ROOT / "data" / "preview_posts.txt"))
     )
 
+    # Картинки и водяной знак
+    images_enabled: bool = field(default_factory=lambda: _bool("IMAGES_ENABLED", True))
+    # Текст водяного знака; по умолчанию — @username канала из TELEGRAM_CHAT_ID
+    watermark_text: str = field(default_factory=lambda: os.getenv("WATERMARK_TEXT", "") or (
+        os.getenv("TELEGRAM_CHAT_ID", "") if os.getenv("TELEGRAM_CHAT_ID", "").startswith("@") else ""))
+    # PNG-логотип канала (с прозрачным фоном), например assets/logo.png
+    watermark_logo: str = field(default_factory=lambda: os.getenv("WATERMARK_LOGO", ""))
+    watermark_opacity: float = field(default_factory=lambda: float(os.getenv("WATERMARK_OPACITY", "0.85")))
+    # Бледный диагональный повтор надписи по всей картинке — защита от обрезки угла
+    watermark_tiled: bool = field(default_factory=lambda: _bool("WATERMARK_TILED", True))
+
+    @property
+    def watermark(self):
+        from .images import WatermarkConfig
+
+        logo = Path(self.watermark_logo) if self.watermark_logo else None
+        if logo and not logo.is_absolute():
+            logo = ROOT / logo
+        return WatermarkConfig(self.watermark_text, logo, self.watermark_opacity, self.watermark_tiled)
+
     @property
     def ai_active(self) -> bool:
         return self.ai_enabled and bool(self.anthropic_api_key)

@@ -23,9 +23,12 @@ class Telegram:
         self.base = f"https://api.telegram.org/bot{token}"
         self.http = httpx.Client(timeout=timeout)
 
-    def _call(self, method: str, payload: dict) -> dict:
+    def _call(self, method: str, payload: dict, files: dict | None = None) -> dict:
         for attempt in range(4):
-            response = self.http.post(f"{self.base}/{method}", json=payload)
+            if files:
+                response = self.http.post(f"{self.base}/{method}", data=payload, files=files)
+            else:
+                response = self.http.post(f"{self.base}/{method}", json=payload)
             data = response.json()
             if data.get("ok"):
                 return data["result"]
@@ -48,6 +51,10 @@ class Telegram:
             payload["link_preview_options"] = {"is_disabled": True}
         return self._call("sendMessage", payload)
 
+    def send_photo(self, jpeg: bytes, caption_html: str) -> dict:
+        payload = {"chat_id": self.chat_id, "caption": caption_html, "parse_mode": "HTML"}
+        return self._call("sendPhoto", payload, files={"photo": ("news.jpg", jpeg, "image/jpeg")})
+
     def get_me(self) -> dict:
         return self._call("getMe", {})
 
@@ -63,6 +70,13 @@ class FilePublisher:
         with self.path.open("a", encoding="utf-8") as f:
             f.write(f"\n{'─' * 70}\n[{datetime.now():%d.%m.%Y %H:%M}]\n{html}\n")
         return {}
+
+    def send_photo(self, jpeg: bytes, caption_html: str) -> dict:
+        images = self.path.parent / "preview_images"
+        images.mkdir(exist_ok=True)
+        name = images / f"{datetime.now():%Y%m%d_%H%M%S_%f}.jpg"
+        name.write_bytes(jpeg)
+        return self.send_message(f"[картинка: {name}]\n{caption_html}")
 
 
 def make_publisher(settings):

@@ -128,6 +128,31 @@ def parse_date(text: str | None) -> datetime | None:
     return None
 
 
+BOILERPLATE = re.compile(
+    r"(узнайте (первым|больше)|официальн\w* (веб)?сайт|официальный портал|все новости|последние новости|"
+    r"читайте (на|в)|подписывайтесь|добро пожаловать|rasmiy veb-sayt|official website)",
+    re.I,
+)
+
+
+def is_boilerplate(text: str) -> bool:
+    """Общий для всего сайта текст в meta description вместо описания конкретной новости."""
+    if not text:
+        return True
+    chunks = [c for c in text.split(",") if c.strip()]
+    if len(chunks) >= 6 and sum(len(c) for c in chunks) / len(chunks) < 40:
+        return True  # список ключевых слов
+    return bool(BOILERPLATE.search(text))
+
+
+def first_paragraph(text: str, title: str = "") -> str:
+    head = title.lower()[:50]
+    for paragraph in text.split("\n"):
+        if len(paragraph) >= 60 and not (head and paragraph.lower().startswith(head)) and not is_boilerplate(paragraph):
+            return paragraph[:500]
+    return ""
+
+
 # ── RSS ─────────────────────────────────────────────────────────────
 
 def parse_feed(content: bytes, source: Source) -> list[NewsItem]:
@@ -360,7 +385,9 @@ def enrich(client: httpx.Client, item: NewsItem, max_chars: int = 6000) -> None:
         return None
 
     if not item.summary:
-        item.summary = _clean(meta("og:description", "description", "twitter:description"))[:600]
+        description = _clean(meta("og:description", "description", "twitter:description"))
+        if not is_boilerplate(description):
+            item.summary = description[:600]
     if not item.image:
         image = meta("og:image", "twitter:image")
         item.image = urljoin(item.url, image) if image else None
@@ -378,8 +405,18 @@ def enrich(client: httpx.Client, item: NewsItem, max_chars: int = 6000) -> None:
         junk.decompose()
     body = soup.find("article") or soup.find("main") or soup.body
     if body:
+        images = []
+        for img in body.find_all("img"):
+            src = img.get("data-src") or img.get("src") or ""
+            if not src or src.startswith("data:") or re.search(r"\.(svg|gif)(\?|$)", src, re.I):
+                continue
+            url = urljoin(item.url, src)
+            if url not in images:
+                images.append(url)
+        item.extra["content_images"] = images[:5]
+    if body:
         paragraphs = [_clean(p.get_text(" ")) for p in body.find_all(["p", "li", "h2", "h3"])]
         text = "\n".join(p for p in paragraphs if len(p) > 40)
         item.text = text[:max_chars]
     if not item.summary and item.text:
-        item.summary = item.text.split("\n")[0][:400]
+        item.summary = first_paragraph(item.text, item.title)
