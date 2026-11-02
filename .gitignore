@@ -4,3 +4,6 @@ __pycache__/
 .env
 data/*.tmp
 .pytest_cache/
+data/bot.log
+data/bot.pid
+data/preview_posts.txt

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from urllib.parse import urldefrag, urljoin, urlparse
 
@@ -39,6 +39,13 @@ SKIP_LINK = re.compile(
     re.I,
 )
 MIN_TITLE_LEN = 20
+TRAILING_MORE = re.compile(r"[\s|·–-]*(подробнее|читать далее|читать|batafsil|read more|далее)\s*[→»>]*\s*$", re.I)
+TRAILING_DATE = re.compile(
+    r"[\s|·,–-]*(\d{1,2}[./]\d{1,2}[./]20\d{2}|\d{1,2}\s+[а-яё]+\s+20\d{2})(\s*(г\.?|года))?\s*$", re.I)
+LEADING_DATE = re.compile(
+    r"^\s*(\d{1,2}[./]\d{1,2}[./]20\d{2}|\d{1,2}\s+[а-яё]+\s+20\d{2})(\s*(г\.?|года))?[\s,.|:–-]*", re.I)
+TASHKENT = timezone(timedelta(hours=5))
+GOVUZ_API = "https://api-portal.gov.uz"
 
 DATE_PATTERNS = [
     (re.compile(r"\b(\d{1,2})[./](\d{1,2})[./](20\d{2})\b"), ("d", "m", "y")),
@@ -195,6 +202,9 @@ def _link_title(a) -> str:
 
 def parse_html_list(html: str, source: Source, page_url: str) -> list[NewsItem]:
     soup = BeautifulSoup(html, "lxml")
+    base = soup.find("base", href=True)
+    if base:
+        page_url = urljoin(page_url, base["href"])
     for junk in soup(["script", "style", "noscript", "header", "footer", "nav"]):
         junk.decompose()
 
@@ -231,15 +241,82 @@ def parse_html_list(html: str, source: Source, page_url: str) -> list[NewsItem]:
         elif not sel.get("item") and not (NEWS_HINTS.search(path) and ID_HINT.search(path)) \
                 and not (NEWS_HINTS.search(path) and path.count("/") >= 3 and len(path) > 25):
             continue
+        published = cand[2] if len(cand) == 3 else _nearby_date(cand[3])
+        # «31 октября 2026 г. Заголовок» — дату переносим в published
+        # «… 21 октября 2026 Подробнее» — то же для даты в конце карточки
+        title = TRAILING_MORE.sub("", title)
+        for rx, cut in ((LEADING_DATE, lambda t, m: t[m.end():]), (TRAILING_DATE, lambda t, m: t[:m.start()])):
+            m = rx.search(title)
+            if m and parse_date(m.group(1)):
+                published = parse_date(m.group(1))  # дата из самой карточки надёжнее соседних блоков
+                title = cut(title, m).strip()
         if len(title) < MIN_TITLE_LEN:
             continue
-        published = cand[2] if len(cand) == 3 else _nearby_date(cand[3])
         if url not in items or len(title) > len(items[url].title):
             items[url] = NewsItem(source.id, source.name, source.group, url, title[:300], published)
     return list(items.values())
 
 
+# ── Портал gov.uz ───────────────────────────────────────────────────
+# Сайты министерств на gov.uz рендерятся в браузере, поэтому читаем тот же JSON API,
+# что и сам сайт. Организация передаётся заголовком `code`, язык — заголовком `language`.
+
+def _govuz_headers(authority: str | None) -> dict:
+    headers = {"language": "ru", "Accept": "application/json"}
+    if authority:
+        headers["code"] = authority
+    return headers
+
+
+def _govuz_prefix(authority: str | None) -> str:
+    return "/authorities/news" if authority else "/news"
+
+
+def fetch_govuz(client: httpx.Client, source: Source) -> list[NewsItem]:
+    authority = source.id if source.authority is None else source.authority
+    response = client.get(f"{GOVUZ_API}{_govuz_prefix(authority)}/category",
+                          params={"code_name": "news", "page": 1}, headers=_govuz_headers(authority))
+    response.raise_for_status()
+    site = f"https://gov.uz/ru/{authority}" if authority else "https://gov.uz/ru"
+    items = []
+    for row in response.json().get("data", []):
+        title = _clean(row.get("title"))
+        if not title or not row.get("id"):
+            continue
+        published = None
+        if row.get("date"):
+            try:
+                published = datetime.strptime(row["date"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=TASHKENT)
+            except ValueError:
+                published = parse_date(row["date"])
+        items.append(NewsItem(
+            source.id, source.name, source.group, f"{site}/news/view/{row['id']}", title[:300], published,
+            _clean(row.get("anons"))[:600], image=row.get("anons_image"),
+            extra={"govuz_id": row["id"], "govuz_authority": authority},
+        ))
+    return items
+
+
+def _enrich_govuz(client: httpx.Client, item: NewsItem, max_chars: int) -> None:
+    authority = item.extra["govuz_authority"]
+    try:
+        response = client.get(f"{GOVUZ_API}{_govuz_prefix(authority)}/view",
+                              params={"id": item.extra["govuz_id"]}, headers=_govuz_headers(authority))
+        response.raise_for_status()
+        data = response.json().get("data") or {}
+    except (httpx.HTTPError, ValueError) as exc:
+        log.debug("gov.uz: не удалось получить %s: %s", item.url, exc)
+        return
+    body = BeautifulSoup(data.get("body") or "", "lxml")
+    paragraphs = [_clean(p.get_text(" ")) for p in body.find_all(["p", "li"])] or [_clean(body.get_text(" "))]
+    item.text = "\n".join(p for p in paragraphs if len(p) > 20)[:max_chars]
+    if not item.summary:
+        item.summary = _clean(data.get("anons"))[:600] or (item.text.split("\n")[0][:400] if item.text else "")
+
+
 def fetch_source(client: httpx.Client, source: Source) -> list[NewsItem]:
+    if source.type == "govuz":
+        return fetch_govuz(client, source)
     response = client.get(source.url)
     response.raise_for_status()
     if source.type == "rss" or (source.type == "auto" and looks_like_feed(response)):
@@ -264,6 +341,9 @@ def fetch_source(client: httpx.Client, source: Source) -> list[NewsItem]:
 
 def enrich(client: httpx.Client, item: NewsItem, max_chars: int = 6000) -> None:
     """Догружает описание, дату, картинку и основной текст со страницы новости."""
+    if "govuz_id" in item.extra:
+        _enrich_govuz(client, item, max_chars)
+        return
     try:
         response = client.get(item.url)
         response.raise_for_status()

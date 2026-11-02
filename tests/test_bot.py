@@ -105,7 +105,7 @@ def test_run_once_initializes_then_posts(tmp_path, monkeypatch):
         def send_message(self, html, preview_url=None):
             sent.append(html)
 
-    monkeypatch.setattr(cli, "Telegram", FakeTelegram)
+    monkeypatch.setattr(cli, "make_publisher", lambda settings: FakeTelegram())
     settings = Settings(telegram_token="t", telegram_chat_id="c", anthropic_api_key="", sources_file=sources_file,
                         state_file=tmp_path / "state.json", post_delay_seconds=0, max_age_days=10_000)
 
@@ -119,3 +119,32 @@ def test_run_once_initializes_then_posts(tmp_path, monkeypatch):
     assert cli.run_once(settings, dry_run=False) == 0  # повторно не публикуется
     assert State(settings.state_file).is_seen("https://bank.uz/ru/news/4513")
 
+
+
+def test_title_dates_and_more_links():
+    html = ('<div><a href="/ru/news/tariffs-nov/">Изменение тарифов с 2 ноября 2026 года 21 октября 2026 Подробнее</a></div>'
+            '<div><a href="/ru/news/davr-ebrd/">31 октября 2026 г. Davr Bank и ЕБРР расширяют поддержку МСБ</a></div>')
+    src = Source(id="t", name="T", url="https://b.uz/ru/news/", link_pattern="/news/")
+    items = {i.url.rsplit("/", 1)[1]: i for i in parse_html_list(html, src, src.url)}
+    assert items["tariffs-nov"].title == "Изменение тарифов с 2 ноября 2026 года"
+    assert items["tariffs-nov"].published.date().isoformat() == "2026-10-21"
+    assert items["davr-ebrd"].title == "Davr Bank и ЕБРР расширяют поддержку МСБ"
+
+
+def test_govuz_source():
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers["code"] == "mfa" and request.headers["language"] == "ru"
+        if request.url.path == "/authorities/news/category":
+            return httpx.Response(200, json={"data": [{"id": 7, "date": "2026-11-02 10:50:00",
+                                                        "title": "Консультации между МИД Узбекистана и Бахрейна",
+                                                        "anons": "", "anons_image": "https://x/img.jpg"}]})
+        assert request.url.params["id"] == "7"
+        return httpx.Response(200, json={"data": {"anons": "", "body": "<p>Первый раунд политических консультаций прошёл в Манаме.</p>"}})
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    src = Source(id="mfa", name="МИД", url="https://gov.uz/ru/mfa/news/news", type="govuz")
+    [item] = fetch_source(client, src)
+    assert item.url == "https://gov.uz/ru/mfa/news/view/7"
+    assert item.published.utcoffset().total_seconds() == 5 * 3600
+    enrich(client, item)
+    assert item.summary.startswith("Первый раунд")

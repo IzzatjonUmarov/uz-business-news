@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+from datetime import datetime
 
 import httpx
 
@@ -49,3 +50,24 @@ class Telegram:
 
     def get_me(self) -> dict:
         return self._call("getMe", {})
+
+
+class FilePublisher:
+    """Режим предпросмотра: пока не задан токен Telegram, посты пишутся в файл."""
+
+    def __init__(self, path):
+        self.path = path
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+
+    def send_message(self, html: str, preview_url: str | None = None) -> dict:
+        with self.path.open("a", encoding="utf-8") as f:
+            f.write(f"\n{'─' * 70}\n[{datetime.now():%d.%m.%Y %H:%M}]\n{html}\n")
+        return {}
+
+
+def make_publisher(settings):
+    if settings.telegram_token and settings.telegram_chat_id:
+        return Telegram(settings.telegram_token, settings.telegram_chat_id)
+    log.warning("TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID не заданы — режим предпросмотра, посты пишутся в %s",
+                settings.preview_file)
+    return FilePublisher(settings.preview_file)

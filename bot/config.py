@@ -47,6 +47,10 @@ class Settings:
     state_file: Path = field(
         default_factory=lambda: Path(os.getenv("STATE_FILE", ROOT / "data" / "state.json"))
     )
+    # куда складывать посты, пока не задан токен Telegram
+    preview_file: Path = field(
+        default_factory=lambda: Path(os.getenv("PREVIEW_FILE", ROOT / "data" / "preview_posts.txt"))
+    )
 
     @property
     def ai_active(self) -> bool:
@@ -62,6 +66,11 @@ class Source:
     type: str = "auto"
     selectors: dict = field(default_factory=dict)
     link_pattern: str | None = None
+    # для type: govuz — код организации на портале gov.uz (gov.uz/ru/<authority>/...);
+    # пустая строка — общая лента портала
+    authority: str | None = None
+    # большой поток общих новостей — включать только вместе с ИИ-фильтром
+    requires_ai: bool = False
     enabled: bool = True
 
 

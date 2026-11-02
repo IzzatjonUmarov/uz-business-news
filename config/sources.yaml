@@ -5,17 +5,22 @@
 #   name      — как подписывать источник в посте
 #   group     — gov | regulator | bank | market | invest | media  (влияет на хэштеги)
 #   url       — страница со списком новостей ИЛИ RSS-лента
-#   type      — rss | html | auto (по умолчанию auto: сначала ищем RSS на странице, потом парсим HTML)
+#   type      — auto (по умолчанию: сначала ищем RSS на странице, потом парсим HTML) | rss | html |
+#               govuz (сайты министерств на портале gov.uz — читаются через его API)
+#   authority — для type: govuz — код организации из адреса gov.uz/ru/<код>/... (по умолчанию = id;
+#               пустая строка "" — общая лента портала)
 #   selectors — (необязательно) CSS-селекторы, если автопарсинг ошибается:
-#                 item:  блок одной новости
-#                 link:  ссылка внутри блока (по умолчанию первый <a>)
-#                 title: заголовок внутри блока (по умолчанию текст ссылки)
+#                 item: блок одной новости, link: ссылка внутри блока, title: заголовок, date: дата
 #   link_pattern — (необязательно) regex, которому должен соответствовать URL новости
-#   enabled   — false, чтобы временно выключить
+#   requires_ai  — true: источник с большим потоком общих новостей, включается только при наличии
+#                  ANTHROPIC_API_KEY, чтобы ИИ отсеивал небизнесовые новости
+#   enabled   — false, чтобы выключить
 #
-# Адреса разделов на сайтах периодически меняются. После правок запускайте:
-#   python -m bot check            — покажет, сколько новостей нашлось в каждом источнике
+# Проверка после правок:
+#   python -m bot check            — сколько новостей нашлось в каждом источнике
 #   python -m bot check --id cbu   — подробно по одному источнику
+#
+# Последняя проверка всех адресов: 02.11.2026.
 
 sources:
   # ── Госорганы ───────────────────────────────────────────────
@@ -25,83 +30,39 @@ sources:
     url: https://president.uz/ru/lists/news
     link_pattern: /ru/lists/view/\d+
 
-  - id: gov
-    name: Правительственный портал gov.uz
-    group: gov
-    url: https://gov.uz/ru/news
-
-  - id: mfa
-    name: МИД Узбекистана
-    group: gov
-    url: https://mfa.uz/ru/press/news
-    link_pattern: /ru/press/news/\d+
-
-  - id: imv
-    name: Министерство экономики и финансов
-    group: gov
-    url: https://imv.uz/ru/news
-
-  - id: miit
-    name: Министерство инвестиций, промышленности и торговли
-    group: invest
-    url: https://miit.uz/ru/news
+  - {id: gov,          name: Правительственный портал,              group: gov,       type: govuz, authority: "", url: "https://gov.uz/ru/news/news"}
+  - {id: mfa,          name: МИД Узбекистана,                        group: gov,       type: govuz, url: "https://gov.uz/ru/mfa/news/news"}
+  - {id: miit,         name: "Министерство инвестиций, промышленности и торговли", group: invest, type: govuz, url: "https://gov.uz/ru/miit/news/news"}
+  - {id: soliq,        name: Налоговый комитет,                      group: gov,       type: govuz, url: "https://gov.uz/ru/soliq/news/news"}
+  - {id: davaktiv,     name: Агентство по управлению госактивами,    group: invest,    type: govuz, url: "https://gov.uz/ru/davaktiv/news/news"}
+  - {id: raqobat,      name: Комитет по развитию конкуренции,        group: regulator, type: govuz, url: "https://gov.uz/ru/raqobat/news/news"}
+  - {id: digital,      name: Министерство цифровых технологий,       group: gov,       type: govuz, url: "https://gov.uz/ru/digital/news/news"}
+  - {id: minenergy,    name: Министерство энергетики,                group: gov,       type: govuz, url: "https://gov.uz/ru/minenergy/news/news"}
+  - {id: agro,         name: Министерство сельского хозяйства,       group: gov,       type: govuz, url: "https://gov.uz/ru/agro/news/news"}
+  - {id: mintrans,     name: Министерство транспорта,                group: gov,       type: govuz, url: "https://gov.uz/ru/mintrans/news/news"}
+  - {id: uzbektourism, name: Комитет по туризму,                     group: gov,       type: govuz, url: "https://gov.uz/ru/uzbektourism/news/news"}
+  - {id: adliya,       name: Министерство юстиции,                   group: gov,       type: govuz, url: "https://gov.uz/ru/adliya/news/news"}
+  - {id: uzatom,       name: Агентство «Узатом»,                     group: gov,       type: govuz, url: "https://gov.uz/ru/uzatom/news/news"}
 
   - id: invest
-    name: Агентство по продвижению инвестиций (invest.gov.uz)
+    name: Агентство по продвижению инвестиций
     group: invest
-    url: https://invest.gov.uz/ru/mediacenter/news/
+    url: https://invest.gov.uz/ru/media/news
 
   - id: stat
     name: Национальный комитет по статистике
     group: gov
-    url: https://stat.uz/ru/press-sluzhba/novosti-goskomstata
-
-  - id: soliq
-    name: Налоговый комитет
-    group: gov
-    url: https://soliq.uz/press/news?lang=ru
-
-  - id: customs
-    name: Таможенный комитет
-    group: gov
-    url: https://customs.uz/ru/news
-
-  - id: raqobat
-    name: Комитет по развитию конкуренции
-    group: regulator
-    url: https://raqobat.uz/ru/news/
-
-  - id: digital
-    name: Министерство цифровых технологий
-    group: gov
-    url: https://digital.uz/ru/news
-
-  - id: minenergy
-    name: Министерство энергетики
-    group: gov
-    url: https://minenergy.uz/ru/news
-
-  - id: agro
-    name: Министерство сельского хозяйства
-    group: gov
-    url: https://agro.uz/ru/news
-
-  - id: itpark
-    name: IT Park Uzbekistan
-    group: invest
-    url: https://it-park.uz/ru/news
-
-  - id: chamber
-    name: Торгово-промышленная палата
-    group: gov
-    url: https://chamber.uz/ru/news
+    url: https://stat.uz/ru/press-tsentr/novosti-goskomstata
 
   - id: uza
     name: УзА — Национальное информагентство
     group: media
-    url: https://uza.uz/ru/posts
+    type: rss
+    url: https://uza.uz/ru/rss
+    requires_ai: true
 
   # ── Регулятор и рынок ───────────────────────────────────────
+  # cbu.uz закрыт для зарубежных IP: работает только с сервера в Узбекистане.
   - id: cbu
     name: Центральный банк
     group: regulator
@@ -115,31 +76,33 @@ sources:
     link_pattern: /ru/press_center/releases/\d+
 
   - id: uzse
-    name: Республиканская фондовая биржа «Тошкент»
+    name: Фондовая биржа «Тошкент»
     group: market
-    url: https://uzse.uz/news?locale=ru
+    url: https://uzse.uz/boards/news/list/
+    link_pattern: /boards/\d+$
 
   # ── Банки ───────────────────────────────────────────────────
-  - {id: nbu,        name: НБУ (Национальный банк),  group: bank, url: "https://nbu.uz/ru/news/"}
-  - {id: sqb,        name: SQB (Узпромстройбанк),    group: bank, url: "https://sqb.uz/ru/news/"}
-  - {id: asaka,      name: Асакабанк,                group: bank, url: "https://asakabank.uz/ru/news"}
-  - {id: agrobank,   name: Агробанк,                 group: bank, url: "https://agrobank.uz/ru/press-center/news"}
-  - {id: xb,         name: Халк банк,                group: bank, url: "https://xb.uz/ru/news"}
-  - {id: ipoteka,    name: Ипотека-банк,             group: bank, url: "https://www.ipotekabank.uz/ru/press/news/"}
-  - {id: mkbank,     name: Микрокредитбанк,          group: bank, url: "https://mkbank.uz/ru/press-center/news/"}
-  - {id: aloqabank,  name: Алокабанк,                group: bank, url: "https://aloqabank.uz/ru/news"}
-  - {id: turonbank,  name: Туронбанк,                group: bank, url: "https://turonbank.uz/ru/news/"}
-  - {id: kapitalbank, name: Капиталбанк,             group: bank, url: "https://kapitalbank.uz/ru/about/news/"}
-  - {id: hamkorbank, name: Хамкорбанк,               group: bank, url: "https://hamkorbank.uz/ru/news/"}
-  - {id: ipakyuli,   name: Ипак Йули банк,           group: bank, url: "https://ipakyulibank.uz/ru/press-center/news"}
-  - {id: ofb,        name: Orient Finans Bank,       group: bank, url: "https://ofb.uz/ru/news/"}
-  - {id: infinbank,  name: InFinBank,                group: bank, url: "https://www.infinbank.com/ru/news/"}
+  - {id: nbu,        name: НБУ (Национальный банк),  group: bank, url: "https://nbu.uz/ru/novosti"}
+  - {id: sqb,        name: SQB (Узпромстройбанк),    group: bank, url: "https://sqb.uz/press-center/news-ru/"}
+  - {id: ipoteka,    name: Ипотека-банк,             group: bank, url: "https://www.ipotekabank.uz/ru/blog/news/"}
+  - {id: mkbank,     name: Микрокредитбанк,          group: bank, url: "https://mkbank.uz/ru/press_center/news/"}
+  - {id: aloqabank,  name: Алокабанк,                group: bank, url: "https://aloqabank.uz/ru/press_center/news/"}
+  - {id: turonbank,  name: Туронбанк,                group: bank, url: "https://turonbank.uz/ru/press_center/news/"}
+  - {id: hamkorbank, name: Хамкорбанк,               group: bank, url: "https://hamkorbank.uz/press-center/news/", link_pattern: "/press-center/news/[a-z0-9-]+$"}
+  - {id: ipakyuli,   name: Ипак Йули банк,           group: bank, url: "https://ru.ipakyulibank.uz/news", link_pattern: "/news/[a-z0-9-]+$"}
+  - {id: ofb,        name: Orient Finans Bank,       group: bank, url: "https://ofb.uz/ru/novosti"}
+  - {id: infinbank,  name: InFinBank,                group: bank, url: "https://www.infinbank.com/ru/press/news/"}
   - {id: davrbank,   name: Давр банк,                group: bank, url: "https://davrbank.uz/ru/news"}
-  - {id: trustbank,  name: Трастбанк,                group: bank, url: "https://trustbank.uz/ru/news/"}
+  - {id: trustbank,  name: Трастбанк,                group: bank, url: "https://trustbank.uz/ru/press_center/news/"}
   - {id: tbc,        name: TBC Bank Uzbekistan,      group: bank, url: "https://tbcbank.uz/ru/news/"}
-  - {id: anorbank,   name: Anorbank,                 group: bank, url: "https://anorbank.uz/ru/news/"}
-  - {id: uzumbank,   name: Uzum Bank,                group: bank, url: "https://uzumbank.uz/ru/news"}
-  - {id: octobank,   name: Octobank,                 group: bank, url: "https://octobank.uz/ru/news"}
-  - {id: tengebank,  name: Tenge Bank,               group: bank, url: "https://tengebank.uz/ru/news"}
-  - {id: garantbank, name: Garant Bank,              group: bank, url: "https://garantbank.uz/ru/news"}
-  - {id: kdb,        name: KDB Bank Uzbekistan,      group: bank, url: "https://kdb.uz/ru/news"}
+  - {id: octobank,   name: Octobank,                 group: bank, url: "https://octobank.uz/ru/press-tsentr"}
+  - {id: tengebank,  name: Tenge Bank,               group: bank, url: "https://tengebank.uz/ru/about/press_center"}
+  - {id: garantbank, name: Garant Bank,              group: bank, url: "https://garantbank.uz/ru/press-center"}
+  - {id: kdb,        name: KDB Bank Uzbekistan,      group: bank, url: "https://kdb.uz/ru/press-center/news"}
+
+  # ── Отключены: сайт отдаёт новости только через JavaScript или закрыт защитой от ботов ──
+  - {id: asaka,       name: Асакабанк,   group: bank, url: "https://asakabank.uz/ru/press-center", enabled: false}
+  - {id: agrobank,    name: Агробанк,    group: bank, url: "https://agrobank.uz/ru",              enabled: false}
+  - {id: xb,          name: Халк банк,   group: bank, url: "https://xb.uz/post",                  enabled: false}
+  - {id: kapitalbank, name: Капиталбанк, group: bank, url: "https://kapitalbank.uz/ru/",           enabled: false}
+  - {id: anorbank,    name: Anorbank,    group: bank, url: "https://anorbank.uz/ru/",              enabled: false}

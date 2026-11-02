@@ -25,7 +25,7 @@ from .fetch import NewsItem, enrich, fetch_source, make_client
 from .format import build_post
 from .rates import build_rates_post, fetch_rates
 from .state import State
-from .telegram import Telegram, TelegramError
+from .telegram import Telegram, TelegramError, make_publisher
 
 log = logging.getLogger("bot")
 
@@ -48,8 +48,10 @@ def collect(settings: Settings, sources: list[Source]) -> dict[str, list[NewsIte
 
 def run_once(settings: Settings, dry_run: bool, only: str | None = None) -> int:
     sources = [s for s in load_sources(settings.sources_file) if not only or s.id == only]
+    if not settings.ai_active:
+        sources = [s for s in sources if not s.requires_ai]
     state = State(settings.state_file)
-    telegram = None if dry_run else Telegram(settings.telegram_token, settings.telegram_chat_id)
+    telegram = None if dry_run else make_publisher(settings)
     editor = Editor(settings.anthropic_api_key, settings.ai_model) if settings.ai_active else None
     cutoff = datetime.now(timezone.utc) - timedelta(days=settings.max_age_days)
 
@@ -139,7 +141,7 @@ def cmd_rates(settings: Settings, dry_run: bool) -> None:
     if dry_run:
         print(post)
         return
-    Telegram(settings.telegram_token, settings.telegram_chat_id).send_message(post)
+    make_publisher(settings).send_message(post)
     state.meta["rates_posted_for"] = date
     state.save()
     log.info("Курсы на %s опубликованы", date)
