@@ -52,6 +52,9 @@ class Settings:
         default_factory=lambda: Path(os.getenv("PREVIEW_FILE", ROOT / "data" / "preview_posts.txt"))
     )
 
+    # Узбекская версия (латиница) в каждом посте
+    uzbek_enabled: bool = field(default_factory=lambda: _bool("UZBEK_ENABLED", True))
+
     # Картинки и водяной знак
     images_enabled: bool = field(default_factory=lambda: _bool("IMAGES_ENABLED", True))
     # Текст водяного знака; по умолчанию — @username канала из TELEGRAM_CHAT_ID

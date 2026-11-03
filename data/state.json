@@ -986,250 +986,250 @@
   "adliya": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5042393,
+   "last_check": 1793679952.6910286,
    "last_error": null,
    "last_found": 12
   },
   "agro": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5040944,
+   "last_check": 1793679952.6909053,
    "last_error": null,
    "last_found": 12
   },
   "aloqabank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5046713,
+   "last_check": 1793679952.6915226,
    "last_error": null,
    "last_found": 7
   },
   "cbu": {
-   "fail_streak": 3,
-   "last_check": 1793679758.5043883,
+   "fail_streak": 4,
+   "last_check": 1793679952.6912317,
    "last_error": "[Errno 104] Connection reset by peer",
    "last_found": 0
   },
   "cbu_press": {
-   "fail_streak": 3,
-   "last_check": 1793679758.5044236,
+   "fail_streak": 4,
+   "last_check": 1793679952.6912706,
    "last_error": "[Errno 104] Connection reset by peer",
    "last_found": 0
   },
   "davaktiv": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5039377,
+   "last_check": 1793679952.6907516,
    "last_error": null,
    "last_found": 12
   },
   "davrbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5049088,
+   "last_check": 1793679952.6918035,
    "last_error": null,
    "last_found": 44
   },
   "digital": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5040112,
+   "last_check": 1793679952.690828,
    "last_error": null,
    "last_found": 12
   },
   "garantbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.505191,
+   "last_check": 1793679952.69203,
    "last_error": null,
    "last_found": 91
   },
   "gov": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5037832,
+   "last_check": 1793679952.6905987,
    "last_error": null,
    "last_found": 12
   },
   "hamkorbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5047426,
+   "last_check": 1793679952.6916056,
    "last_error": null,
    "last_found": 9
   },
   "infinbank": {
-   "fail_streak": 0,
+   "fail_streak": 1,
    "initialized": true,
-   "last_check": 1793679758.504862,
-   "last_error": null,
-   "last_found": 7
+   "last_check": 1793679952.6917534,
+   "last_error": "[Errno 104] Connection reset by peer",
+   "last_found": 0
   },
   "invest": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5043128,
+   "last_check": 1793679952.6911068,
    "last_error": null,
    "last_found": 12
   },
   "ipakyuli": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.50479,
+   "last_check": 1793679952.691669,
    "last_error": null,
    "last_found": 40
   },
   "ipoteka": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5045893,
+   "last_check": 1793679952.69144,
    "last_error": null,
    "last_found": 20
   },
   "kdb": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5053377,
+   "last_check": 1793679952.692192,
    "last_error": null,
    "last_found": 410
   },
   "mfa": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5038247,
+   "last_check": 1793679952.690646,
    "last_error": null,
    "last_found": 12
   },
   "miit": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.503861,
+   "last_check": 1793679952.6906748,
    "last_error": null,
    "last_found": 12
   },
   "minenergy": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5040507,
+   "last_check": 1793679952.690867,
    "last_error": null,
    "last_found": 12
   },
   "mintrans": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5041528,
+   "last_check": 1793679952.690945,
    "last_error": null,
    "last_found": 12
   },
   "mkbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.504633,
+   "last_check": 1793679952.691484,
    "last_error": null,
    "last_found": 20
   },
   "nbu": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5045059,
+   "last_check": 1793679952.6913562,
    "last_error": null,
    "last_found": 6
   },
   "octobank": {
-   "fail_streak": 0,
+   "fail_streak": 1,
    "initialized": true,
-   "last_check": 1793679758.5050611,
-   "last_error": null,
-   "last_found": 3
+   "last_check": 1793679952.6919281,
+   "last_error": "[Errno 104] Connection reset by peer",
+   "last_found": 0
   },
   "ofb": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5048258,
+   "last_check": 1793679952.6917198,
    "last_error": null,
    "last_found": 5
   },
   "president": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5035954,
+   "last_check": 1793679952.6903799,
    "last_error": null,
    "last_found": 15
   },
   "raqobat": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5039752,
+   "last_check": 1793679952.6907897,
    "last_error": null,
    "last_found": 12
   },
   "soliq": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5039,
+   "last_check": 1793679952.6907113,
    "last_error": null,
    "last_found": 12
   },
   "sqb": {
-   "fail_streak": 1,
+   "fail_streak": 2,
    "initialized": true,
-   "last_check": 1793679758.504538,
+   "last_check": 1793679952.6913908,
    "last_error": "Server error '502 Bad Gateway' for url 'https://sqb.uz/press-center/news-ru/'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502",
    "last_found": 0
   },
   "stat": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5043542,
+   "last_check": 1793679952.6911943,
    "last_error": null,
    "last_found": 18
   },
   "tbc": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5050266,
+   "last_check": 1793679952.6918948,
    "last_error": null,
    "last_found": 10
   },
   "tengebank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5051267,
+   "last_check": 1793679952.6919668,
    "last_error": null,
    "last_found": 18
   },
   "trustbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5049891,
+   "last_check": 1793679952.691845,
    "last_error": null,
    "last_found": 13
   },
   "turonbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5047052,
+   "last_check": 1793679952.6915584,
    "last_error": null,
    "last_found": 3
   },
   "uzatom": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5042758,
+   "last_check": 1793679952.6910675,
    "last_error": null,
    "last_found": 12
   },
   "uzbektourism": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5042014,
+   "last_check": 1793679952.6909852,
    "last_error": null,
    "last_found": 12
   },
   "uzse": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793679758.5044699,
+   "last_check": 1793679952.691319,
    "last_error": null,
    "last_found": 30
   }

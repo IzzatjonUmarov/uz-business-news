@@ -26,6 +26,7 @@ from .format import CAPTION_LIMIT, TELEGRAM_LIMIT, build_post
 from .images import build_image
 from .rates import build_rates_post, fetch_rates
 from .state import State
+from .uzbek import fetch_uzbek, to_new_latin
 from .telegram import Telegram, TelegramError, make_publisher
 
 log = logging.getLogger("bot")
@@ -117,7 +118,13 @@ def run_once(settings: Settings, dry_run: bool, only: str | None = None) -> int:
                 log.info("  пропуск (старая, %s): %s", item.published.date(), item.url)
                 state.mark(item.url)
                 continue
-            review = editor.review(item) if editor else None
+            uz = fetch_uzbek(client, item) if settings.uzbek_enabled else None
+            review = editor.review(item, uz) if editor else None
+            if review and settings.uzbek_enabled and review.get("headline_uz"):
+                # страховка: даже если модель сбилась на старую латиницу — приводим к новой
+                uz = (to_new_latin(review["headline_uz"]), to_new_latin(review.get("summary_uz", "")))
+            if settings.uzbek_enabled and not uz:
+                log.info("  нет узбекской версии, пост только на русском: %s", item.url)
             if review and review["importance"] < settings.min_importance:
                 log.info("  пропуск (значимость %d): %s", review["importance"], item.title[:80])
                 state.mark(item.url)
@@ -131,7 +138,7 @@ def run_once(settings: Settings, dry_run: bool, only: str | None = None) -> int:
                                         review.get("headline") if review else None, generic)
                 except Exception as exc:  # noqa: BLE001 — без картинки пост всё равно уйдёт
                     log.warning("Не удалось подготовить картинку для %s: %s", item.url, exc)
-            post = build_post(item, review, CAPTION_LIMIT if image else TELEGRAM_LIMIT)
+            post = build_post(item, review, CAPTION_LIMIT if image else TELEGRAM_LIMIT, uz)
             if dry_run:
                 note = ""
                 if image:

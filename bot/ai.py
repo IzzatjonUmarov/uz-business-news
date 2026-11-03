@@ -38,7 +38,11 @@ SYSTEM = """Ты редактор Telegram-канала о бизнесе и э�
 конкретные цифры, сроки, условия, для кого это важно.
 3. Используй ТОЛЬКО факты из переданного текста. Ничего не добавляй от себя и не домысливай. \
 Если цифр в тексте нет — не придумывай их.
-4. Выбери одну категорию из списка."""
+4. Выбери одну категорию из списка.
+5. Сделай узбекскую версию на латинице в НОВОЙ редакции алфавита (закон ЗРУ-1184 от 21.10.2026): \
+вместо sh, ch, oʻ, gʻ пиши ş, ç, ö, ğ (Özbekiston, böyiça, uçun, taşkil, ilğor), апостроф ʼ — только \
+вместо твёрдого знака (taʼlim). Заголовок headline_uz и пересказ summary_uz. Если передан официальный узбекский текст — опирайся на него и его терминологию, \
+иначе переведи свой русский пересказ. Факты в обеих версиях должны совпадать."""
 
 SCHEMA = {
     "type": "object",
@@ -47,13 +51,15 @@ SCHEMA = {
         "category": {"type": "string", "enum": CATEGORIES},
         "headline": {"type": "string"},
         "summary": {"type": "string"},
+        "headline_uz": {"type": "string", "description": "Заголовок на узбекском (латиница)"},
+        "summary_uz": {"type": "string", "description": "Пересказ на узбекском (латиница)"},
         "tags": {
             "type": "array",
             "items": {"type": "string"},
             "description": "1–3 коротких хэштега без #, латиницей или кириллицей, без пробелов",
         },
     },
-    "required": ["importance", "category", "headline", "summary", "tags"],
+    "required": ["importance", "category", "headline", "summary", "headline_uz", "summary_uz", "tags"],
     "additionalProperties": False,
 }
 
@@ -63,12 +69,14 @@ class Editor:
         self.client = anthropic.Anthropic(api_key=api_key)
         self.model = model
 
-    def review(self, item: NewsItem) -> dict | None:
+    def review(self, item: NewsItem, uz: tuple[str, str] | None = None) -> dict | None:
         content = (
             f"Источник: {item.source_name}\nURL: {item.url}\n"
             f"Дата: {item.published.date().isoformat() if item.published else 'не указана'}\n"
             f"Заголовок: {item.title}\nОписание: {item.summary}\n\nТекст:\n{item.text or '(текст недоступен)'}"
         )
+        if uz:
+            content += f"\n\nОфициальная узбекская версия:\nЗаголовок: {uz[0]}\nОписание: {uz[1]}"
         try:
             response = self.client.beta.messages.create(
                 model=self.model,

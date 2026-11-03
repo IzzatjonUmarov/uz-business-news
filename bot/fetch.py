@@ -145,6 +145,11 @@ def is_boilerplate(text: str) -> bool:
     return bool(BOILERPLATE.search(text))
 
 
+def strip_site_suffix(title: str) -> str:
+    """«Тариф «Конструктор» | Новости | Hamkorbank» → «Тариф «Конструктор»»."""
+    return re.split(r"\s+[|—–]\s+", title)[0].strip() if title else title
+
+
 def shorten(text: str, limit: int = 450) -> str:
     """Обрезает по концу предложения, а если так не выйдет — по слову с многоточием."""
     text = _clean(text)
@@ -410,9 +415,15 @@ def enrich(client: httpx.Client, item: NewsItem, max_chars: int = 6000) -> None:
             time_tag = soup.find("time")
             if time_tag:
                 item.published = parse_date(time_tag.get("datetime") or time_tag.get_text())
-    og_title = _clean(meta("og:title"))
-    if og_title and len(og_title) > len(item.title) and og_title.lower() not in {"новости", "news"}:
-        item.title = og_title[:300]
+    og_title = strip_site_suffix(_clean(meta("og:title")))
+    # заголовок из списка обычно полный; og:title берём, только если из списка его не достали
+    if og_title and og_title.lower() not in {"новости", "news"}:
+        short = len(item.title) < MIN_TITLE_LEN + 5 or item.title.endswith(("…", "..."))
+        # в карточке списка к заголовку бывает приклеен анонс: «Заголовок Ташкент, 29 октября…»
+        glued = len(og_title) >= MIN_TITLE_LEN and len(item.title) > len(og_title) + 10 \
+            and item.title.lower().startswith(og_title.lower()[:40])
+        if (short and len(og_title) > len(item.title)) or glued:
+            item.title = og_title[:300]
 
     for junk in soup(["script", "style", "noscript", "header", "footer", "nav", "aside", "form"]):
         junk.decompose()

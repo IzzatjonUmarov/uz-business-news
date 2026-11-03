@@ -64,7 +64,7 @@ def test_rss_and_autodiscovery():
 
 def test_enrich_and_post():
     client = mock_client({"https://bank.uz/ru/news/4512": ((FIX / "article.html").read_text(), "text/html")})
-    item = NewsItem("testbank", "Тест Банк", "bank", "https://bank.uz/ru/news/4512", "Короткий заголовок новости банка")
+    item = NewsItem("testbank", "Тест Банк", "bank", "https://bank.uz/ru/news/4512", "Депозит")
     enrich(client, item)
     assert item.published.year == 2026
     assert "1 млн сумов" in item.summary
@@ -207,3 +207,36 @@ def test_shorten():
     assert shorten("Первое предложение достаточно длинное. Второе предложение " + "слово " * 100, 70) \
         == "Первое предложение достаточно длинное."
     assert shorten("слово " * 100, 50).endswith("…") and len(shorten("слово " * 100, 50)) <= 51
+
+
+def test_uzbek_latin_helpers():
+    from bot.uzbek import cyr_to_latin, is_russian_not_uzbek, looks_uzbek_latin, to_new_latin, uz_url_candidates
+    # новый алфавит (ЗРУ-1184): sh→ş, ch→ç, oʻ→ö, gʻ→ğ, тутуқ — ʼ
+    assert cyr_to_latin("Меҳнат миграцияси бўйича ғолиб") == "Mehnat migratsiyasi böyiça ğolib"
+    assert cyr_to_latin("Ёшлар ва ер, таълим") == "Yoşlar va yer, taʼlim"
+    assert to_new_latin("O‘zbekiston bo‘yicha ilg‘or tashkil etish uchun") == "Özbekiston böyiça ilğor taşkil etiş uçun"
+    assert to_new_latin("Oʻzbekiston boʻyicha soligʻi") == "Özbekiston böyiça soliği"
+    assert to_new_latin("YaTTlar uçun böyiça topshiriş") == "YaTTlar uçun böyiça topşiriş"   # смесь (как на gov.uz)
+    assert to_new_latin("O‘ZBEKISTON, SHAHAR, Shavkat, Chorvoq") == "ÖZBEKISTON, ŞAHAR, Şavkat, Çorvoq"
+    assert to_new_latin("ta’lim, e'tibor, sun`iy, Is’hoq") == "taʼlim, eʼtibor, sunʼiy, Ishoq"
+    assert to_new_latin("eksportchilarni qo‘llab-quvvatlash, ishchi") == "eksportçilarni qöllab-quvvatlaş, işçi"
+    assert to_new_latin("Deutsche Bank, Wyndham, Bosch, Shanghai") == "Deutsche Bank, Wyndham, Bosch, Şanghai"
+    assert is_russian_not_uzbek("Саммит в Анкаре: новые направления сотрудничества")
+    assert not is_russian_not_uzbek("Ўзбекистон ва Германия ҳамкорлиги")
+    assert looks_uzbek_latin("Biznes uchun «Konstruktor» tarifi", "Тариф «Конструктор»")
+    assert not looks_uzbek_latin("Тариф «Конструктор» для бизнеса", "Тариф")
+    assert uz_url_candidates("https://bank.uz/ru/news/abc") == ["https://bank.uz/uz/news/abc"]
+    assert uz_url_candidates("https://ru.bank.uz/news/abc") == ["https://uz.bank.uz/news/abc"]
+    assert uz_url_candidates("https://bank.uz/press-center/news/abc") == ["https://bank.uz/uz/press-center/news/abc"]
+
+
+def test_bilingual_post_fits_caption():
+    item = NewsItem("soliq", "Налоговый комитет", "gov", "https://gov.uz/ru/soliq/news/view/1",
+                    "Упрощён порядок отчётности НДФЛ по аренде", summary="Длинное описание. " * 60)
+    post = build_post(item, None, 1024, ("Ijara böyiça hisobot tartibi soddalaştirildi", "Uzun tavsif. " * 60))
+    assert len(post) <= 1024
+    assert "🇺🇿 <b>Ijara böyiça hisobot tartibi soddalaştirildi</b>" in post
+    assert "Источник / Manba: Налоговый комитет" in post
+    assert post.index("<b>Упрощён") < post.index("🇺🇿")
+    assert "Длинное описание." in post and "Uzun tavsif." in post   # обе версии сохранили описание
+    assert "Источник: " in build_post(item)                          # без узбекского — как раньше

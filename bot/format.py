@@ -5,7 +5,7 @@ from __future__ import annotations
 import html
 import re
 
-from .fetch import NewsItem
+from .fetch import NewsItem, shorten
 
 GROUP_TAGS = {
     "gov": "#госорганы",
@@ -37,7 +37,9 @@ def _source_tag(item: NewsItem) -> str:
     return _tag(item.source_id)
 
 
-def build_post(item: NewsItem, review: dict | None = None, limit: int = TELEGRAM_LIMIT) -> str:
+def build_post(item: NewsItem, review: dict | None = None, limit: int = TELEGRAM_LIMIT,
+               uz: tuple[str, str] | None = None) -> str:
+    """Пост: русский блок, затем (если есть) узбекский, ссылка на первоисточник и хэштеги."""
     e = html.escape
     if review:
         emoji = CATEGORY_EMOJI.get(review.get("category", ""), "📰")
@@ -47,25 +49,37 @@ def build_post(item: NewsItem, review: dict | None = None, limit: int = TELEGRAM
     else:
         emoji = GROUP_EMOJI.get(item.group, "📰")
         headline, body, extra_tags = item.title, item.summary, []
+    uz_headline, uz_body = uz if uz else ("", "")
 
-    if body and body.strip().lower().startswith(headline.strip().lower()[:60]):
-        body = ""  # описание дублирует заголовок
+    def _dedupe(head: str, text: str) -> str:
+        return "" if text and text.strip().lower().startswith(head.strip().lower()[:60]) else text or ""
+
+    body, uz_body = _dedupe(headline, body), _dedupe(uz_headline, uz_body)
 
     date = f" · {item.published.strftime('%d.%m.%Y')}" if item.published else ""
     tags = " ".join(dict.fromkeys(t for t in [GROUP_TAGS.get(item.group, ""), _source_tag(item), *extra_tags] if t))
-
-    parts = [f"{emoji} <b>{e(headline)}</b>"]
-    if body:
-        parts.append(e(body))
-    parts.append(f"🔗 <a href=\"{e(item.url, quote=True)}\">Источник: {e(item.source_name)}</a>{e(date)}")
+    source_label = "Источник / Manba" if uz_headline else "Источник"
+    footer = [f"🔗 <a href=\"{e(item.url, quote=True)}\">{source_label}: {e(item.source_name)}</a>{e(date)}"]
     if tags:
-        parts.append(tags)
-    text = "\n\n".join(parts)
+        footer.append(tags)
 
-    while len(text) > limit and body:
-        # укорачиваем пересказ по словам, пока пост не влезет в лимит
-        cut = max(0, len(body) - (len(text) - limit) - 10)
-        body = body[:cut].rsplit(" ", 1)[0].rstrip(" ,.;:—-") if cut else ""
-        parts[1] = e(body + "…") if body else None
-        text = "\n\n".join(p for p in parts if p)
+    def render(ru_text: str, uz_text: str) -> str:
+        parts = [f"{emoji} <b>{e(headline)}</b>"]
+        if ru_text:
+            parts.append(e(ru_text))
+        if uz_headline:
+            parts.append(f"🇺🇿 <b>{e(uz_headline)}</b>")
+            if uz_text:
+                parts.append(e(uz_text))
+        return "\n\n".join(parts + footer)
+
+    text = render(body, uz_body)
+    if len(text) > limit:
+        # делим оставшееся место между описаниями поровну (пропорционально длине)
+        fixed = len(render("", ""))
+        budget = max(0, limit - fixed - 8)
+        total = len(e(body)) + len(e(uz_body)) or 1
+        ru_cut = shorten(body, int(budget * len(e(body)) / total)) if body else ""
+        uz_cut = shorten(uz_body, int(budget * len(e(uz_body)) / total)) if uz_body else ""
+        text = render(ru_cut if len(ru_cut) > 40 else "", uz_cut if len(uz_cut) > 40 else "")
     return text[:limit]
