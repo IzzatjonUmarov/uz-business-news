@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
+import subprocess
 import sys
 import time
 from datetime import datetime
@@ -58,15 +60,28 @@ def run_once(settings: Settings, dry_run: bool, only: str | None = None, with_ra
     return posted
 
 
-def run_loop(settings: Settings, interval: int, only: str | None, with_rates: bool) -> None:
+def _persist(state: State) -> None:
+    """Сохранить состояние; в GitHub Actions — ещё и отправить его в ветку bot-state (STATE_SYNC_CMD)."""
+    state.save()
+    command = os.getenv("STATE_SYNC_CMD")
+    if command:
+        result = subprocess.run(command, shell=True, timeout=120, capture_output=True, text=True)
+        if result.returncode:
+            log.warning("Не удалось синхронизировать состояние: %s", (result.stderr or result.stdout).strip()[-300:])
+
+
+def run_loop(settings: Settings, interval: int, only: str | None, with_rates: bool,
+             max_runtime: int | None = None) -> None:
+    """Постоянная работа. max_runtime — выйти через столько секунд (для длинных запусков в GitHub Actions)."""
     state = State(settings.state_file)
     if "last_post_at" not in state.meta:
         # первый запуск с очередью: отсчитываем интервал от старта, чтобы не публиковать сразу
         state.meta["last_post_at"] = time.time()
-        state.save()
+        _persist(state)
     publisher = make_publisher(settings)
+    deadline = time.time() + max_runtime if max_runtime else None
     next_check = 0.0
-    while True:
+    while deadline is None or time.time() < deadline:
         if time.time() >= next_check:
             if with_rates:
                 try:
@@ -78,10 +93,11 @@ def run_loop(settings: Settings, interval: int, only: str | None, with_rates: bo
             except Exception as exc:  # noqa: BLE001 — сбой сбора не должен останавливать публикацию
                 log.exception("Ошибка при проверке источников: %s", exc)
             next_check = time.time() + interval
-            state.save()
+            _persist(state)
         if publish_next(settings, state, publisher):
-            state.save()
+            _persist(state)
         time.sleep(TICK_SECONDS)
+    log.info("Время работы истекло (%d мин), завершаю", (max_runtime or 0) // 60)
 
 
 def cmd_queue(settings: Settings) -> None:
@@ -141,6 +157,7 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("--loop", type=int, metavar="SECONDS")
     p_run.add_argument("--id", help="обработать только один источник")
     p_run.add_argument("--with-rates", action="store_true", help="заодно публиковать курсы ЦБ раз в день")
+    p_run.add_argument("--max-runtime", type=int, metavar="SECONDS", help="с --loop: завершиться через столько секунд")
     p_check = sub.add_parser("check")
     p_check.add_argument("--id")
     p_rates = sub.add_parser("rates")
@@ -176,7 +193,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.loop and not args.dry_run:
         log.info("Посты — не чаще одного в %d мин, проверка источников — каждые %d с",
                  settings.post_interval_minutes, args.loop)
-        run_loop(settings, args.loop, args.id, args.with_rates)
+        run_loop(settings, args.loop, args.id, args.with_rates, args.max_runtime)
         return 0
     try:
         run_once(settings, args.dry_run, args.id, args.with_rates)

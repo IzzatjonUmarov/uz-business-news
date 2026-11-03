@@ -323,3 +323,20 @@ def test_machine_translation_fallback():
     item = NewsItem("tbc", "TBC", "bank", "https://tbcbank.uz/ru/news/1", "Банк запустил новый депозит")
     uz, source = uzbek_version(client, item)
     assert source == "machine" and uz[0] == "Bank yangi omonatni işga tuşirdi"   # уже новая латиница
+
+
+def test_run_loop_max_runtime_and_state_sync(tmp_path, monkeypatch):
+    import time as _time
+    sources_file = tmp_path / "sources.yaml"
+    sources_file.write_text("sources: []\n")
+    marker = tmp_path / "synced"
+    monkeypatch.setenv("STATE_SYNC_CMD", f"echo x >> {marker}")
+    monkeypatch.setattr(cli, "TICK_SECONDS", 0.2)
+    monkeypatch.setattr(cli, "make_publisher", lambda settings: None)
+    settings = Settings(telegram_token="t", telegram_chat_id="c", anthropic_api_key="", sources_file=sources_file,
+                        state_file=tmp_path / "state.json")
+    started = _time.time()
+    cli.run_loop(settings, interval=900, only=None, with_rates=False, max_runtime=1)
+    assert _time.time() - started < 5                     # вышел по max_runtime
+    assert marker.exists() and len(marker.read_text().split()) >= 2   # состояние синхронизировалось
+    assert "last_post_at" in State(settings.state_file).meta

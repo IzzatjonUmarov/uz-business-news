@@ -1,24 +1,34 @@
-name: Публикация новостей 
+name: Публикация новостей
 
-# Каждые 15 минут: проверка источников и не больше одного поста.
-# Интервал между постами (POST_INTERVAL_MINUTES, по умолчанию 30) соблюдает сам бот,
-# а частый запуск сглаживает задержки расписания GitHub.
+# Бот работает непрерывной цепочкой запусков: каждый запуск живёт ~5,5 часа (лимит GitHub — 6 ч),
+# внутри проверяет источники каждые 15 минут и публикует не чаще одного поста в POST_INTERVAL_MINUTES,
+# а перед завершением сам запускает следующий. Запустить цепочку достаточно один раз
+# (Actions → Публикация новостей → Run workflow). Расписание — запасной вариант, если цепочка прервётся.
+# Пауза: Actions → Публикация новостей → «…» → Disable workflow.
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "7 */3 * * *"
   workflow_dispatch: {}
+  # обновление кода бота тоже запускает цепочку (если она уже идёт — новый запуск подождёт текущий)
+  push:
+    branches: [main]
+    paths: ["bot/**", "config/**", "requirements.txt", ".github/workflows/news.yml", "scripts/push_state.sh"]
 
+# одновременно работает только один запуск; следующий ждёт окончания текущего
 concurrency:
   group: news
   cancel-in-progress: false
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 355
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Проверить токен бота
         env:
@@ -49,7 +59,7 @@ jobs:
             echo "Ветки bot-state ещё нет — первый запуск"
           fi
 
-      - name: Сбор и публикация
+      - name: Работа бота (~5,5 часа)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ vars.TELEGRAM_CHAT_ID || '@umarovs_news' }}
@@ -58,17 +68,22 @@ jobs:
           MIN_IMPORTANCE: ${{ vars.MIN_IMPORTANCE || '3' }}
           MIN_IMPORTANCE_RULES: ${{ vars.MIN_IMPORTANCE_RULES || '1.8' }}
           POST_INTERVAL_MINUTES: ${{ vars.POST_INTERVAL_MINUTES || '30' }}
-        run: python -m bot run --with-rates
+          # после каждого поста и каждой проверки состояние сразу уходит в bot-state — без дублей при сбое
+          STATE_SYNC_CMD: ./scripts/push_state.sh
+        run: python -m bot run --with-rates --loop 900 --max-runtime 19800
 
       - name: Сохранить состояние
-        if: success() || failure()
-        env:
-          GH_TOKEN: ${{ github.token }}
+        if: ${{ !cancelled() }}
+        run: ./scripts/push_state.sh
+
+      - name: Запустить следующий запуск цепочки
+        if: ${{ !cancelled() }}
         run: |
-          [ -f data/state.json ] || exit 0
-          mkdir -p /tmp/state && cp data/state.json /tmp/state/
-          cd /tmp/state
-          git init -q
-          git -c user.name="news-bot" -c user.email="news-bot@users.noreply.github.com" add state.json
-          git -c user.name="news-bot" -c user.email="news-bot@users.noreply.github.com" commit -qm "state"
-          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:bot-state
+          busy=$(gh run list --workflow news.yml --limit 20 --json status,databaseId \
+            --jq "[.[] | select(.databaseId != ${GITHUB_RUN_ID} and (.status == \"queued\" or .status == \"in_progress\" or .status == \"waiting\" or .status == \"pending\"))] | length")
+          if [ "$busy" = "0" ]; then
+            gh workflow run news.yml --ref "${GITHUB_REF_NAME}"
+            echo "Следующий запуск поставлен в очередь"
+          else
+            echo "Следующий запуск уже ждёт — новый не нужен"
+          fi
