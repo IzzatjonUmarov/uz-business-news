@@ -20,6 +20,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      - name: Проверить токен бота
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
+            echo "::error::Не задан секрет TELEGRAM_BOT_TOKEN (Settings → Secrets and variables → Actions)"
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
@@ -52,7 +61,7 @@ jobs:
         run: python -m bot run --with-rates
 
       - name: Сохранить состояние
-        if: always()
+        if: success() || failure()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
