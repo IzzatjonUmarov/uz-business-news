@@ -36,8 +36,10 @@ class Settings:
     ai_enabled: bool = field(default_factory=lambda: _bool("AI_ENABLED", True))
     # Минимальная бизнес-значимость (1–5), ниже которой новость не публикуется. Работает только с ИИ.
     min_importance: int = field(default_factory=lambda: _int("MIN_IMPORTANCE", 3))
-    max_posts_per_run: int = field(default_factory=lambda: _int("MAX_POSTS_PER_RUN", 15))
-    post_delay_seconds: int = field(default_factory=lambda: _int("POST_DELAY_SECONDS", 4))
+    # Не чаще одного поста в N минут; остальное ждёт в очереди
+    post_interval_minutes: int = field(default_factory=lambda: _int("POST_INTERVAL_MINUTES", 30))
+    # Максимум постов в очереди: при переполнении выбрасываются наименее важные и самые старые
+    max_queue: int = field(default_factory=lambda: _int("MAX_QUEUE", 100))
     # Новости старше этого срока не публикуются (если дату удалось определить).
     max_age_days: int = field(default_factory=lambda: _int("MAX_AGE_DAYS", 3))
     request_timeout: int = field(default_factory=lambda: _int("REQUEST_TIMEOUT", 25))

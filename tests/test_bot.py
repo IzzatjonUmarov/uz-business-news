@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
@@ -89,19 +90,17 @@ def test_rates_post():
     assert "12 650.50" in post and "🔺" in post and "🔻" in post
 
 
-def test_run_once_initializes_then_posts(tmp_path, monkeypatch):
+def test_queue_posts_one_per_interval(tmp_path, monkeypatch):
+    from bot import pipeline
     sources_file = tmp_path / "sources.yaml"
     sources_file.write_text("sources:\n  - {id: testbank, name: Тест Банк, group: bank, url: 'https://bank.uz/ru/news/'}\n")
     list_html = (FIX / "bank_list.html").read_text()
-    routes = {"https://bank.uz/ru/news/": (list_html, "text/html"),
-              "https://bank.uz/ru/news/4512": ((FIX / "article.html").read_text(), "text/html")}
-    monkeypatch.setattr(cli, "make_client", lambda timeout: mock_client(routes))
+    article = ((FIX / "article.html").read_text(), "text/html")
+    routes = {"https://bank.uz/ru/news/": (list_html, "text/html")}
+    monkeypatch.setattr(pipeline, "make_client", lambda timeout: mock_client(routes))
     sent = []
 
     class FakeTelegram:
-        def __init__(self, *a):
-            pass
-
         def send_message(self, html, preview_url=None):
             sent.append(html)
 
@@ -112,18 +111,42 @@ def test_run_once_initializes_then_posts(tmp_path, monkeypatch):
 
     monkeypatch.setattr(cli, "make_publisher", lambda settings: FakeTelegram())
     settings = Settings(telegram_token="t", telegram_chat_id="c", anthropic_api_key="", sources_file=sources_file,
-                        state_file=tmp_path / "state.json", post_delay_seconds=0, max_age_days=10_000)
+                        state_file=tmp_path / "state.json", max_age_days=10_000, post_interval_minutes=30)
 
     assert cli.run_once(settings, dry_run=False) == 0  # первый запуск только запоминает ленту
     assert State(settings.state_file).source_initialized("testbank")
 
-    routes["https://bank.uz/ru/news/"] = (list_html.replace("/ru/news/4512/", "/ru/news/4513/"), "text/html")
-    routes["https://bank.uz/ru/news/4513"] = routes.pop("https://bank.uz/ru/news/4512")
-    assert cli.run_once(settings, dry_run=False) == 1
-    assert "онлайн-депозит" in sent[0]
-    assert cli.run_once(settings, dry_run=False) == 0  # повторно не публикуется
-    assert State(settings.state_file).is_seen("https://bank.uz/ru/news/4513")
+    # на сайте появились две новые новости
+    routes["https://bank.uz/ru/news/"] = (list_html.replace("/ru/news/4512/", "/ru/news/4513/")
+                                         .replace("/ru/news/4511/", "/ru/news/4514/"), "text/html")
+    routes["https://bank.uz/ru/news/4513"] = routes["https://bank.uz/ru/news/4514"] = article
+    assert cli.run_once(settings, dry_run=False) == 1          # одна сразу
+    assert cli.run_once(settings, dry_run=False) == 0          # вторая ждёт интервала
+    state = State(settings.state_file)
+    assert len(state.meta["queue"]) == 1
+    assert 29 * 60 < pipeline.seconds_until_next_post(settings, state) <= 30 * 60
 
+    state.meta["last_post_at"] -= 31 * 60                       # прошло 30+ минут
+    state.save()
+    assert cli.run_once(settings, dry_run=False) == 1
+    assert len(sent) == 2 and "онлайн-депозит" in sent[0]
+    assert State(settings.state_file).meta["queue"] == []
+    assert cli.run_once(settings, dry_run=False) == 0          # повторно не публикуется
+
+
+def test_queue_order_and_expiry(tmp_path):
+    from bot import pipeline
+    settings = Settings(state_file=tmp_path / "s.json", max_age_days=3, max_queue=2)
+    state = State(settings.state_file)
+    now = datetime.now(timezone.utc)
+
+    def entry(title, days_ago, importance=3):
+        return {"kind": "news", "importance": importance, "queued_at": 0, "attempts": 0,
+                "item": {"title": title, "published": (now - timedelta(days=days_ago)).isoformat()}}
+
+    state.meta["queue"] = [entry("старая", 5), entry("вчера", 1), entry("сегодня", 0), entry("важная", 2, 5)]
+    pipeline._trim_queue(settings, state)
+    assert [e["item"]["title"] for e in state.meta["queue"]] == ["важная", "сегодня"]
 
 
 def test_title_dates_and_more_links():
@@ -189,8 +212,9 @@ def test_repeated_image_is_generic(tmp_path):
     state = State(tmp_path / "s.json")
     a = NewsItem("b", "B", "bank", "https://b.uz/1", "x" * 30, image="https://b.uz/same.jpg")
     b = NewsItem("b", "B", "bank", "https://b.uz/2", "y" * 30, image="https://b.uz/same.jpg")
-    assert cli._generic_images(state, a) == set()
-    assert cli._generic_images(state, b) == {"https://b.uz/same.jpg"}
+    from bot.pipeline import _generic_images
+    assert _generic_images(state, a) == set()
+    assert _generic_images(state, b) == {"https://b.uz/same.jpg"}
 
 
 def test_boilerplate_descriptions():
