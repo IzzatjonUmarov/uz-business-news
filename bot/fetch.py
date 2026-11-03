@@ -145,12 +145,25 @@ def is_boilerplate(text: str) -> bool:
     return bool(BOILERPLATE.search(text))
 
 
+def shorten(text: str, limit: int = 450) -> str:
+    """Обрезает по концу предложения, а если так не выйдет — по слову с многоточием."""
+    text = _clean(text)
+    if len(text) <= limit:
+        return text
+    cut = text[:limit]
+    end = max(cut.rfind(". "), cut.rfind("! "), cut.rfind("? "))
+    if end >= limit // 2:
+        return cut[: end + 1]
+    return cut.rsplit(" ", 1)[0].rstrip(" ,.;:—–-") + "…"
+
+
 def first_paragraph(text: str, title: str = "") -> str:
     head = title.lower()[:50]
     for paragraph in text.split("\n"):
         if len(paragraph) >= 60 and not (head and paragraph.lower().startswith(head)) and not is_boilerplate(paragraph):
-            return paragraph[:500]
-    return ""
+            return shorten(paragraph)
+    rest = [p for p in text.split("\n") if len(p) > 20 and not is_boilerplate(p)]
+    return shorten(rest[0]) if rest else ""
 
 
 # ── RSS ─────────────────────────────────────────────────────────────
@@ -170,7 +183,7 @@ def parse_feed(content: bytes, source: Source) -> list[NewsItem]:
                 break
         summary = _clean(BeautifulSoup(entry.get("summary", ""), "lxml").get_text(" "))
         items.append(NewsItem(source.id, source.name, source.group, normalize_url(link), title,
-                              published, summary[:600]))
+                              published, shorten(summary)))
     return items
 
 
@@ -316,7 +329,7 @@ def fetch_govuz(client: httpx.Client, source: Source) -> list[NewsItem]:
                 published = parse_date(row["date"])
         items.append(NewsItem(
             source.id, source.name, source.group, f"{site}/news/view/{row['id']}", title[:300], published,
-            _clean(row.get("anons"))[:600], image=row.get("anons_image"),
+            shorten(row.get("anons") or ""), image=row.get("anons_image"),
             extra={"govuz_id": row["id"], "govuz_authority": authority},
         ))
     return items
@@ -336,7 +349,7 @@ def _enrich_govuz(client: httpx.Client, item: NewsItem, max_chars: int) -> None:
     paragraphs = [_clean(p.get_text(" ")) for p in body.find_all(["p", "li"])] or [_clean(body.get_text(" "))]
     item.text = "\n".join(p for p in paragraphs if len(p) > 20)[:max_chars]
     if not item.summary:
-        item.summary = _clean(data.get("anons"))[:600] or (item.text.split("\n")[0][:400] if item.text else "")
+        item.summary = shorten(data.get("anons") or "") or first_paragraph(item.text, item.title)
 
 
 def fetch_source(client: httpx.Client, source: Source) -> list[NewsItem]:
@@ -387,7 +400,7 @@ def enrich(client: httpx.Client, item: NewsItem, max_chars: int = 6000) -> None:
     if not item.summary:
         description = _clean(meta("og:description", "description", "twitter:description"))
         if not is_boilerplate(description):
-            item.summary = description[:600]
+            item.summary = shorten(description)
     if not item.image:
         image = meta("og:image", "twitter:image")
         item.image = urljoin(item.url, image) if image else None

@@ -200,3 +200,10 @@ def test_boilerplate_descriptions():
     assert not is_boilerplate("Ставка по депозиту составит 22% годовых, минимальная сумма — 1 млн сумов.")
     text = "Короткая строка\nПо предварительным данным Госкомстата, в январе-сентябре выловлено 270,8 тысячи тонн рыбы."
     assert first_paragraph(text).startswith("По предварительным")
+
+
+def test_shorten():
+    from bot.fetch import shorten
+    assert shorten("Первое предложение достаточно длинное. Второе предложение " + "слово " * 100, 70) \
+        == "Первое предложение достаточно длинное."
+    assert shorten("слово " * 100, 50).endswith("…") and len(shorten("слово " * 100, 50)) <= 51

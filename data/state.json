@@ -1,5 +1,23 @@
 {
- "meta": {},
+ "meta": {
+  "generic_images": [],
+  "image_owner": {
+   "https://api-portal.gov.uz/uploads/146/2026/11/03/20b07627-9d6f-51b0-102b-3f136f50d432_news_lang_.jpg": "https://gov.uz/ru/uzbektourism/news/view/241629",
+   "https://api-portal.gov.uz/uploads/26/2026/11/03/4a266496-7b00-0872-06f6-ce6c8e4ad0cf_news_lang_.jpg": "https://gov.uz/ru/minenergy/news/view/241626",
+   "https://api-portal.gov.uz/uploads/26/2026/11/03/5bb01f5f-cbba-3886-9e9a-8b3de1305bf8_news_lang_.jpg": "https://gov.uz/ru/minenergy/news/view/241619",
+   "https://api-portal.gov.uz/uploads/5/2026/11/02/13682915-fa8b-472e-51cb-af02729ef657_news_lang_481560.jpg": "https://gov.uz/ru/mintrans/news/view/241512",
+   "https://api-portal.gov.uz/uploads/5/2026/11/02/446e4d53-0e18-ed71-f169-4e57b8a0c2f6_news_lang_.jpg": "https://gov.uz/ru/mintrans/news/view/241568",
+   "https://minio-test.tbcbank.uz/qa-tbcbankuz-new/uploads/map_Image_c7bbb33bff.png": "https://tbcbank.uz/ru/news/articles/news-article-73"
+  },
+  "summary_owner": {
+   "minenergy:#сотрудничество": "https://gov.uz/ru/minenergy/news/view/241619",
+   "minenergy:Рост населения и экономики столицы сопровождается увеличением спроса на тепловую энергию. В настоящее время предприятие «Ташкентский тепловой центр», входящее в состав АО «Тепловые электрические станц": "https://gov.uz/ru/minenergy/news/view/241626",
+   "mintrans:3–5 ноября текущего года в столичном отеле Hyatt Regency Tashkent состоится 3-я конференция Рабочей группы по сотрудничеству в сфере гражданской авиации \"Центральная Азия – Китай\" (C5+1).": "https://gov.uz/ru/mintrans/news/view/241568",
+   "mintrans:Завершился футбольный турнир \"Кубок министра\", организованный с целью широкой пропаганды здорового образа жизни среди работников транспортной сферы, развития массового спорта, а также укрепления коман": "https://gov.uz/ru/mintrans/news/view/241512",
+   "tbc:С 12 ноября подписка в TBC Biznes станет еще выгоднее. Что изменится:": "https://tbcbank.uz/ru/news/articles/news-article-73",
+   "uzbektourism:В авторитетной британской газете «The Telegraph» опубликована статья под заголовком «Уникальное приключение по Великому шёлковому пути».": "https://gov.uz/ru/uzbektourism/news/view/241629"
+  }
+ },
  "seen": {
   "https://aloqabank.uz/ru/press_center/news/proverka-taynyy-klient-v-dzhizakskoy-oblasti-izucheno-kachestvo-obsluzhivaniya": 1793625313.5665216,
   "https://aloqabank.uz/ru/press_center/news/rukovodstvo-alokabank-vstretilos-s-grazhdanami-i-predprinimatelyami-v-ferganskoy-oblasti": 1793625313.566521,
@@ -227,6 +245,8 @@
   "https://gov.uz/ru/minenergy/news/view/240830": 1793625313.5657194,
   "https://gov.uz/ru/minenergy/news/view/240895": 1793625313.5657191,
   "https://gov.uz/ru/minenergy/news/view/240994": 1793625313.5657184,
+  "https://gov.uz/ru/minenergy/news/view/241619": 1793679769.407215,
+  "https://gov.uz/ru/minenergy/news/view/241626": 1793679764.3000681,
   "https://gov.uz/ru/mintrans/news/view/236144": 1793625313.565823,
   "https://gov.uz/ru/mintrans/news/view/237101": 1793625313.5658226,
   "https://gov.uz/ru/mintrans/news/view/238039": 1793625313.5658224,
@@ -240,6 +260,8 @@
   "https://gov.uz/ru/mintrans/news/view/241391": 1793625313.56582,
   "https://gov.uz/ru/mintrans/news/view/241458": 1793625313.5658205,
   "https://gov.uz/ru/mintrans/news/view/241482": 1793625845.770771,
+  "https://gov.uz/ru/mintrans/news/view/241512": 1793679779.796607,
+  "https://gov.uz/ru/mintrans/news/view/241568": 1793679774.5023587,
   "https://gov.uz/ru/news/view/236364": 1793625313.5652902,
   "https://gov.uz/ru/news/view/236803": 1793625313.56529,
   "https://gov.uz/ru/news/view/236844": 1793625313.5652895,
@@ -274,7 +296,7 @@
   "https://gov.uz/ru/soliq/news/view/240893": 1793625313.5654933,
   "https://gov.uz/ru/soliq/news/view/240903": 1793625313.5654938,
   "https://gov.uz/ru/soliq/news/view/240908": 1793625313.565494,
-  "https://gov.uz/ru/soliq/news/view/241300": 1793625313.5654926,
+  "https://gov.uz/ru/soliq/news/view/241300": 1793679918.1218305,
   "https://gov.uz/ru/soliq/news/view/241307": 1793625313.565493,
   "https://gov.uz/ru/uzatom/news/view/227854": 1793625313.5659902,
   "https://gov.uz/ru/uzatom/news/view/228393": 1793625313.56599,
@@ -300,6 +322,7 @@
   "https://gov.uz/ru/uzbektourism/news/view/240965": 1793625313.56587,
   "https://gov.uz/ru/uzbektourism/news/view/241120": 1793625313.5658698,
   "https://gov.uz/ru/uzbektourism/news/view/241342": 1793625313.5658693,
+  "https://gov.uz/ru/uzbektourism/news/view/241629": 1793679784.8945863,
   "https://hamkorbank.uz/press-center/news/business-constructor-tariff": 1793625313.5666165,
   "https://hamkorbank.uz/press-center/news/capital-market-regulatory-sandbox": 1793625313.5666187,
   "https://hamkorbank.uz/press-center/news/gen-tariff-changes-november-2026": 1793625313.566618,
@@ -866,6 +889,7 @@
   "https://tbcbank.uz/ru/news/articles/news-article-70": 1793625313.5669467,
   "https://tbcbank.uz/ru/news/articles/news-article-71": 1793625313.566946,
   "https://tbcbank.uz/ru/news/articles/news-article-72": 1793625313.5669458,
+  "https://tbcbank.uz/ru/news/articles/news-article-73": 1793679790.9695375,
   "https://tengebank.uz/ru/about/press_center/news/580": 1793625313.5670714,
   "https://tengebank.uz/ru/about/press_center/news/582": 1793625313.5670722,
   "https://tengebank.uz/ru/about/press_center/news/585": 1793625313.567071,
@@ -962,250 +986,250 @@
   "adliya": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8446238,
+   "last_check": 1793679758.5042393,
    "last_error": null,
    "last_found": 12
   },
   "agro": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8444395,
+   "last_check": 1793679758.5040944,
    "last_error": null,
    "last_found": 12
   },
   "aloqabank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8452168,
+   "last_check": 1793679758.5046713,
    "last_error": null,
    "last_found": 7
   },
   "cbu": {
-   "fail_streak": 2,
-   "last_check": 1793625844.8448129,
+   "fail_streak": 3,
+   "last_check": 1793679758.5043883,
    "last_error": "[Errno 104] Connection reset by peer",
    "last_found": 0
   },
   "cbu_press": {
-   "fail_streak": 2,
-   "last_check": 1793625844.8448582,
+   "fail_streak": 3,
+   "last_check": 1793679758.5044236,
    "last_error": "[Errno 104] Connection reset by peer",
    "last_found": 0
   },
   "davaktiv": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8442485,
+   "last_check": 1793679758.5039377,
    "last_error": null,
    "last_found": 12
   },
   "davrbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8455267,
+   "last_check": 1793679758.5049088,
    "last_error": null,
    "last_found": 44
   },
   "digital": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.844344,
+   "last_check": 1793679758.5040112,
    "last_error": null,
    "last_found": 12
   },
   "garantbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8458083,
+   "last_check": 1793679758.505191,
    "last_error": null,
    "last_found": 91
   },
   "gov": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8440325,
+   "last_check": 1793679758.5037832,
    "last_error": null,
    "last_found": 12
   },
   "hamkorbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.84531,
+   "last_check": 1793679758.5047426,
    "last_error": null,
    "last_found": 9
   },
   "infinbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8454652,
+   "last_check": 1793679758.504862,
    "last_error": null,
    "last_found": 7
   },
   "invest": {
-   "fail_streak": 1,
+   "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8447125,
-   "last_error": "[Errno 104] Connection reset by peer",
-   "last_found": 0
+   "last_check": 1793679758.5043128,
+   "last_error": null,
+   "last_found": 12
   },
   "ipakyuli": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8453727,
+   "last_check": 1793679758.50479,
    "last_error": null,
    "last_found": 40
   },
   "ipoteka": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8451142,
+   "last_check": 1793679758.5045893,
    "last_error": null,
    "last_found": 20
   },
   "kdb": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8460112,
+   "last_check": 1793679758.5053377,
    "last_error": null,
    "last_found": 410
   },
   "mfa": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8440967,
+   "last_check": 1793679758.5038247,
    "last_error": null,
    "last_found": 12
   },
   "miit": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8441477,
+   "last_check": 1793679758.503861,
    "last_error": null,
    "last_found": 12
   },
   "minenergy": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8443935,
+   "last_check": 1793679758.5040507,
    "last_error": null,
    "last_found": 12
   },
   "mintrans": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8444874,
+   "last_check": 1793679758.5041528,
    "last_error": null,
    "last_found": 12
   },
   "mkbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.845168,
+   "last_check": 1793679758.504633,
    "last_error": null,
    "last_found": 20
   },
   "nbu": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8449943,
+   "last_check": 1793679758.5045059,
    "last_error": null,
    "last_found": 6
   },
   "octobank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8456721,
+   "last_check": 1793679758.5050611,
    "last_error": null,
    "last_found": 3
   },
   "ofb": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8454177,
+   "last_check": 1793679758.5048258,
    "last_error": null,
    "last_found": 5
   },
   "president": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8437805,
+   "last_check": 1793679758.5035954,
    "last_error": null,
    "last_found": 15
   },
   "raqobat": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8442965,
+   "last_check": 1793679758.5039752,
    "last_error": null,
    "last_found": 12
   },
   "soliq": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.844198,
+   "last_check": 1793679758.5039,
    "last_error": null,
    "last_found": 12
   },
   "sqb": {
-   "fail_streak": 0,
+   "fail_streak": 1,
    "initialized": true,
-   "last_check": 1793625844.845057,
-   "last_error": null,
-   "last_found": 18
+   "last_check": 1793679758.504538,
+   "last_error": "Server error '502 Bad Gateway' for url 'https://sqb.uz/press-center/news-ru/'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502",
+   "last_found": 0
   },
   "stat": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8447695,
+   "last_check": 1793679758.5043542,
    "last_error": null,
    "last_found": 18
   },
   "tbc": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.845628,
+   "last_check": 1793679758.5050266,
    "last_error": null,
    "last_found": 10
   },
   "tengebank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.845723,
+   "last_check": 1793679758.5051267,
    "last_error": null,
    "last_found": 18
   },
   "trustbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8455803,
+   "last_check": 1793679758.5049891,
    "last_error": null,
    "last_found": 13
   },
   "turonbank": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8452601,
+   "last_check": 1793679758.5047052,
    "last_error": null,
    "last_found": 3
   },
   "uzatom": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8446705,
+   "last_check": 1793679758.5042758,
    "last_error": null,
    "last_found": 12
   },
   "uzbektourism": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.8445346,
+   "last_check": 1793679758.5042014,
    "last_error": null,
    "last_found": 12
   },
   "uzse": {
    "fail_streak": 0,
    "initialized": true,
-   "last_check": 1793625844.844948,
+   "last_check": 1793679758.5044699,
    "last_error": null,
    "last_found": 30
   }
