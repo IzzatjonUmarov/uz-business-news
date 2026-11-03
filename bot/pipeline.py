@@ -21,6 +21,7 @@ from .config import Settings, Source, load_sources
 from .fetch import NewsItem, enrich, fetch_source, first_paragraph, make_client
 from .format import CAPTION_LIMIT, TELEGRAM_LIMIT, build_post
 from .images import build_image
+from .importance import rule_importance
 from .rates import build_rates_post, fetch_rates
 from .state import State
 from .telegram import TelegramError
@@ -95,8 +96,12 @@ def prepare(settings: Settings, state: State, client: httpx.Client, item: NewsIt
     if review and settings.uzbek_enabled and review.get("headline_uz"):
         # страховка: даже если модель сбилась на старую латиницу — приводим к новой
         uz = (to_new_latin(review["headline_uz"]), to_new_latin(review.get("summary_uz", "")))
-    if review and review["importance"] < settings.min_importance:
-        log.info("  пропуск (значимость %d): %s", review["importance"], item.title[:80])
+    if review:
+        importance, threshold = float(review["importance"]), settings.min_importance
+    else:
+        importance, threshold = rule_importance(item, uz), settings.min_importance_rules
+    if importance < threshold:
+        log.info("  пропуск (значимость %.1f < %s): %s", importance, threshold, item.title[:80])
         return None
     _drop_repeated_summary(state, item)
     _generic_images(state, item)
@@ -104,7 +109,7 @@ def prepare(settings: Settings, state: State, client: httpx.Client, item: NewsIt
     data["published"] = item.published.isoformat() if item.published else None
     data["text"] = item.text[:3000]
     return {"kind": "news", "item": data, "review": review, "uz": list(uz) if uz else None,
-            "importance": review["importance"] if review else 3, "queued_at": time.time(), "attempts": 0}
+            "importance": importance, "queued_at": time.time(), "attempts": 0}
 
 
 def _item_from(entry: dict) -> NewsItem:
@@ -177,9 +182,12 @@ def _published_ts(entry: dict) -> float:
     return datetime.fromisoformat(published).timestamp() if published else entry["queued_at"]
 
 
-def _ordered(queue: list) -> list:
-    # сначала важнее, затем свежее
-    return sorted(queue, key=lambda e: (e.get("importance", 3), _published_ts(e)), reverse=True)
+def _ordered(queue: list, last_source: str | None = None) -> list:
+    # сначала важнее; при равной важности — не тот же источник, что в прошлом посте; затем свежее
+    def key(e):
+        source = e.get("item", {}).get("source_id")
+        return (round(e.get("importance", 3), 1), source != last_source, _published_ts(e))
+    return sorted(queue, key=key, reverse=True)
 
 
 def _trim_queue(settings: Settings, state: State) -> None:
@@ -188,7 +196,7 @@ def _trim_queue(settings: Settings, state: State) -> None:
     alive = [e for e in queue if e["kind"] != "news" or _published_ts(e) >= cutoff]
     if len(alive) < len(queue):
         log.info("Из очереди убрано устаревших: %d", len(queue) - len(alive))
-    alive = _ordered(alive)
+    alive = _ordered(alive, state.meta.get("last_post_source"))
     if len(alive) > settings.max_queue:
         log.info("Очередь переполнена — убраны %d наименее важных/старых", len(alive) - settings.max_queue)
         alive = alive[: settings.max_queue]
@@ -242,6 +250,7 @@ def publish_next(settings: Settings, state: State, publisher) -> bool:
         return False
     queue.remove(entry)
     state.meta["last_post_at"] = time.time()
+    state.meta["last_post_source"] = entry.get("item", {}).get("source_id", "rates")
     if entry["kind"] == "rates":
         state.meta["rates_posted_for"] = entry["rates_date"]
     title = entry.get("item", {}).get("title") or "курсы ЦБ"

@@ -92,7 +92,7 @@ def cmd_queue(settings: Settings) -> None:
     for n, e in enumerate(queue, 1):
         item = e.get("item") or {}
         date = datetime.fromisoformat(item["published"]).strftime("%d.%m %H:%M") if item.get("published") else "  —  "
-        print(f"{n:>3}. [{e.get('importance', 3)}] {date}  {(item.get('title') or 'Курсы ЦБ')[:80]}")
+        print(f"{n:>3}. [{e.get('importance', 3):.1f}] {date}  {(item.get('title') or 'Курсы ЦБ')[:80]}")
 
 
 def cmd_check(settings: Settings, only: str | None) -> int:

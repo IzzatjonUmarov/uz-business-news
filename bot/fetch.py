@@ -43,7 +43,12 @@ TRAILING_MORE = re.compile(r"[\s|·–-]*(подробнее|читать дал
 TRAILING_DATE = re.compile(
     r"[\s|·,–-]*(\d{1,2}[./]\d{1,2}[./]20\d{2}|\d{1,2}\s+[а-яё]+\s+20\d{2})(\s*(г\.?|года))?\s*$", re.I)
 LEADING_DATE = re.compile(
-    r"^\s*(\d{1,2}[./]\d{1,2}[./]20\d{2}|\d{1,2}\s+[а-яё]+\s+20\d{2})(\s*(г\.?|года))?[\s,.|:–-]*", re.I)
+    r"^\s*(\d{1,2}[./]\d{1,2}[./]20\d{2}|\d{1,2}\s+[а-яё]+\s+20\d{2}|[A-Z][a-z]+\s+\d{1,2},\s+20\d{2})"
+    r"(\s*(г\.?|года))?[\s,.|:–-]*", re.I)
+EN_DATE = re.compile(r"\b(January|February|March|April|May|June|July|August|September|October|November|December)"
+                     r"\s+(\d{1,2}),\s+(20\d{2})")
+EN_MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october",
+             "november", "december"]
 TASHKENT = timezone(timedelta(hours=5))
 GOVUZ_API = "https://api-portal.gov.uz"
 
@@ -116,6 +121,9 @@ def parse_date(text: str | None) -> datetime | None:
                 return datetime(parts["y"], parts["m"], parts["d"], tzinfo=timezone.utc)
             except ValueError:
                 continue
+    m = EN_DATE.search(text)
+    if m:
+        return datetime(int(m.group(3)), EN_MONTHS.index(m.group(1).lower()) + 1, int(m.group(2)), tzinfo=timezone.utc)
     m = RU_DATE.search(text)
     if m:
         word = m.group(2).lower()

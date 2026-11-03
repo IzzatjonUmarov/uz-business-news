@@ -36,6 +36,8 @@ class Settings:
     ai_enabled: bool = field(default_factory=lambda: _bool("AI_ENABLED", True))
     # Минимальная бизнес-значимость (1–5), ниже которой новость не публикуется. Работает только с ИИ.
     min_importance: int = field(default_factory=lambda: _int("MIN_IMPORTANCE", 3))
+    # Порог для оценки по правилам (без ИИ), 1–5: ниже — не публикуется
+    min_importance_rules: float = field(default_factory=lambda: float(os.getenv("MIN_IMPORTANCE_RULES", "1.8")))
     # Не чаще одного поста в N минут; остальное ждёт в очереди
     post_interval_minutes: int = field(default_factory=lambda: _int("POST_INTERVAL_MINUTES", 30))
     # Максимум постов в очереди: при переполнении выбрасываются наименее важные и самые старые

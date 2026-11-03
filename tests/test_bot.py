@@ -264,3 +264,27 @@ def test_bilingual_post_fits_caption():
     assert post.index("<b>Упрощён") < post.index("🇺🇿")
     assert "Длинное описание." in post and "Uzun tavsif." in post   # обе версии сохранили описание
     assert "Источник: " in build_post(item)                          # без узбекского — как раньше
+
+
+def test_rule_importance():
+    from bot.importance import rule_importance
+
+    def score(source_id, group, title, summary=""):
+        return rule_importance(NewsItem(source_id, "S", group, "https://x.uz/1", title, summary=summary))
+
+    important = score("miit", "invest", "В Самаркандской области рассмотрены вопросы запуска свободной торговой зоны",
+                      "Экспорт вырос на 25%, инвестиции составят $150 млн")
+    product = score("tbc", "bank", "Apple Pay становится доступен держателям карт TBC Bank")
+    rates = score("ipoteka", "bank", "Изменение процентных ставок по вкладу «Premium»")
+    greeting = score("kdb", "bank", "С Днём учителей и наставников!")
+    schedule = score("infinbank", "bank", "График работы в выходные дни")
+    transport = score("miit", "invest", "Узбекистан и Франция обсудили расширение инвестиционного сотрудничества",
+                      "Обсуждены проекты в сфере транспорта и логистики")
+    assert important > product >= 1.8 and rates >= 1.8
+    assert transport >= 2.5                     # «транспорт» — не «спорт»
+    assert greeting < 1.8 and schedule < 1.8
+
+
+def test_english_leading_date():
+    from bot.fetch import parse_date
+    assert parse_date("October 13, 2026").date().isoformat() == "2026-10-13"
