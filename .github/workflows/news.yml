@@ -1,8 +1,11 @@
 name: Публикация новостей
 
+# Каждые 15 минут: проверка источников и не больше одного поста.
+# Интервал между постами (POST_INTERVAL_MINUTES, по умолчанию 30) соблюдает сам бот,
+# а частый запуск сглаживает задержки расписания GitHub.
 on:
   schedule:
-    - cron: "*/30 * * * *"   # каждые 30 минут (UTC)
+    - cron: "*/15 * * * *"
   workflow_dispatch: {}
 
 concurrency:
@@ -18,22 +21,45 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
           cache: pip
+
       - run: pip install -r requirements.txt
+
+      # Состояние (что уже отправлено, очередь, время последнего поста) хранится в ветке bot-state
+      - name: Загрузить состояние
+        run: |
+          mkdir -p data
+          if git fetch --depth=1 origin bot-state 2>/dev/null; then
+            git show FETCH_HEAD:state.json > data/state.json
+            echo "Состояние загружено"
+          else
+            echo "Ветки bot-state ещё нет — первый запуск"
+          fi
+
       - name: Сбор и публикация
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ vars.TELEGRAM_CHAT_ID || '@umarovs_news' }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           AI_MODEL: ${{ vars.AI_MODEL || 'claude-opus-5-5' }}
           MIN_IMPORTANCE: ${{ vars.MIN_IMPORTANCE || '3' }}
+          MIN_IMPORTANCE_RULES: ${{ vars.MIN_IMPORTANCE_RULES || '1.8' }}
+          POST_INTERVAL_MINUTES: ${{ vars.POST_INTERVAL_MINUTES || '30' }}
         run: python -m bot run --with-rates
-      - name: Сохранить список отправленного
+
+      - name: Сохранить состояние
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "news-bot"
-          git config user.email "news-bot@users.noreply.github.com"
-          git add data/state.json
-          git diff --cached --quiet || (git commit -m "state: обновление" && git push)
+          [ -f data/state.json ] || exit 0
+          mkdir -p /tmp/state && cp data/state.json /tmp/state/
+          cd /tmp/state
+          git init -q
+          git -c user.name="news-bot" -c user.email="news-bot@users.noreply.github.com" add state.json
+          git -c user.name="news-bot" -c user.email="news-bot@users.noreply.github.com" commit -qm "state"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:bot-state

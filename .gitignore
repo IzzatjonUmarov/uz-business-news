@@ -8,3 +8,5 @@ data/bot.log
 data/bot.pid
 data/preview_posts.txt
 samples/
+data/preview_images/
+data/state.json
