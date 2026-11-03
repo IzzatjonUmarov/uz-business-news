@@ -12,6 +12,7 @@
 
 from __future__ import annotations
 
+import html
 import logging
 import re
 from urllib.parse import urlparse, urlunparse
@@ -99,12 +100,21 @@ def is_russian_not_uzbek(text: str) -> bool:
     return not re.search(r"[ЎўҚқҒғҲҳ]", text) and bool(re.search(r"[ЫыЩщ]|\b(в|и|на|с|по)\b", text))
 
 
+HOMOGLYPHS = str.maketrans("аеорсухкмтАЕОРСУХКМТВН", "aeopcyxkmtAEOPCYXKMTBH")
+MIXED_WORD = re.compile(r"\b(?=\w*[A-Za-z])(?=\w*[А-Яа-я])\w+\b")
+
+
+def fix_homoglyphs(text: str) -> str:
+    """«Rеspublikasi» с кириллической «е» внутри латинского слова → чистая латиница."""
+    return MIXED_WORD.sub(lambda m: m.group(0).translate(HOMOGLYPHS), text)
+
+
 def to_new_latin(text: str) -> str:
     """Любой узбекский текст (кириллица, старая латиница, смесь) → латиница в новой редакции."""
-    text = text or ""
+    text = html.unescape(text or "")
     if is_mostly_cyrillic(text):
         text = cyr_to_latin(text)
-    return old_latin_to_new(text)
+    return old_latin_to_new(fix_homoglyphs(text))
 
 
 def looks_uzbek_latin(text: str, russian: str) -> bool:
@@ -122,6 +132,8 @@ def uz_url_candidates(url: str) -> list[str]:
     candidates = []
     if "/ru/" in path or path.endswith("/ru"):
         candidates.append(path.replace("/ru/", "/uz/", 1) if "/ru/" in path else path[:-3] + "/uz")
+        if path.startswith("/ru/"):
+            candidates.append(path[3:])  # узбекский — язык сайта по умолчанию: /ru/news/x → /news/x
     elif host.startswith("ru."):
         candidates.append(("uz." + host[3:], path))
     else:
@@ -153,8 +165,21 @@ def _fetch_govuz(client: httpx.Client, item: NewsItem) -> tuple[str, str] | None
     return title, summary
 
 
+NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
+
+
+def same_news(ru_text: str, uz_text: str) -> bool:
+    """Защита от чужой статьи по ссылке: в новости совпадают хотя бы некоторые числа (даты, суммы)."""
+    ru_numbers = {n.replace(",", ".") for n in NUMBER.findall(ru_text) if len(n) >= 2}
+    if len(ru_numbers) < 2:
+        return True  # чисел мало — сравнивать не по чему
+    uz_numbers = {n.replace(",", ".") for n in NUMBER.findall(uz_text)}
+    return len(ru_numbers & uz_numbers) >= min(2, len(ru_numbers))
+
+
 def _fetch_page(client: httpx.Client, item: NewsItem) -> tuple[str, str] | None:
-    for url in uz_url_candidates(item.url):
+    candidates = list(dict.fromkeys([*item.extra.get("uz_alternates", []), *uz_url_candidates(item.url)]))
+    for url in candidates:
         probe = NewsItem(item.source_id, item.source_name, item.group, url, "")
         try:
             response = client.head(url)
@@ -169,6 +194,10 @@ def _fetch_page(client: httpx.Client, item: NewsItem) -> tuple[str, str] | None:
             continue
         enrich(client, probe)
         title = strip_site_suffix(probe.title)
+        ru_text = " ".join([item.title, item.summary, item.text[:1500]])
+        if title and not same_news(ru_text, " ".join([title, probe.summary, probe.text[:3000]])):
+            log.debug("Узбекская страница %s не совпадает с новостью %s", url, item.url)
+            continue
         if title:
             # meta description на узбекских страницах часто общая для сайта — надёжнее первый абзац
             return title, first_paragraph(probe.text, title) or probe.summary
@@ -192,3 +221,19 @@ def fetch_uzbek(client: httpx.Client, item: NewsItem) -> tuple[str, str] | None:
     if summary and (not looks_uzbek_latin(summary, item.summary) or summary == title):
         summary = ""
     return title, summary
+
+
+def uzbek_version(client: httpx.Client, item: NewsItem) -> tuple[tuple[str, str] | None, str]:
+    """(заголовок, описание) на новой латинице и откуда взято: official | machine | none."""
+    official = fetch_uzbek(client, item)
+    if official:
+        return official, "official"
+    from .translate import translate_ru_uz
+
+    title = translate_ru_uz(client, item.title)
+    if not title:
+        return None, "none"
+    summary = translate_ru_uz(client, item.summary) if item.summary else ""
+    if not item.title.rstrip().endswith("."):
+        title = title.rstrip().rstrip(".")  # переводчик добавляет точку в конце заголовка
+    return (to_new_latin(title), to_new_latin(summary or "")), "machine"

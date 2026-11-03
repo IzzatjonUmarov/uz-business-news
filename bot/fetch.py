@@ -390,6 +390,25 @@ def fetch_source(client: httpx.Client, source: Source) -> list[NewsItem]:
 
 # ── Страница новости ────────────────────────────────────────────────
 
+UZ_SWITCH = re.compile(r"^(uz|o.?z(bek(cha)?)?|ўзб(екча)?)$", re.I)
+
+
+def uz_alternates(soup: BeautifulSoup, page_url: str) -> list[str]:
+    """Ссылки на узбекскую версию этой же страницы: <link hreflang="uz…"> и переключатель языка."""
+    found = []
+    for link in soup.find_all("link", hreflang=True, href=True):
+        if link["hreflang"].lower().startswith("uz"):
+            found.append(urljoin(page_url, link["href"]))
+    depth = len([p for p in urlparse(page_url).path.split("/") if p])
+    for a in soup.find_all("a", href=True):
+        if UZ_SWITCH.match(_clean(a.get_text())):
+            url = urljoin(page_url, a["href"])
+            # переключатель, ведущий на общий список, а не на эту новость, не годится
+            if len([p for p in urlparse(url).path.split("/") if p]) >= depth:
+                found.append(url)
+    return list(dict.fromkeys(u for u in found if u.startswith("http") and normalize_url(u) != normalize_url(page_url)))
+
+
 def enrich(client: httpx.Client, item: NewsItem, max_chars: int = 6000) -> None:
     """Догружает описание, дату, картинку и основной текст со страницы новости."""
     if "govuz_id" in item.extra:
@@ -402,6 +421,7 @@ def enrich(client: httpx.Client, item: NewsItem, max_chars: int = 6000) -> None:
         log.debug("Не удалось открыть %s: %s", item.url, exc)
         return
     soup = BeautifulSoup(response.text, "lxml")
+    item.extra["uz_alternates"] = uz_alternates(soup, str(response.url))
 
     def meta(*names: str) -> str | None:
         for name in names:

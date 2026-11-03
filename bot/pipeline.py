@@ -25,7 +25,7 @@ from .importance import rule_importance
 from .rates import build_rates_post, fetch_rates
 from .state import State
 from .telegram import TelegramError
-from .uzbek import fetch_uzbek, to_new_latin
+from .uzbek import fetch_uzbek, to_new_latin, uzbek_version
 
 log = logging.getLogger("bot")
 
@@ -91,8 +91,13 @@ def prepare(settings: Settings, state: State, client: httpx.Client, item: NewsIt
     if item.published and item.published < _cutoff(settings):
         log.info("  пропуск (старая, %s): %s", item.published.date(), item.url)
         return None
-    uz = fetch_uzbek(client, item) if settings.uzbek_enabled else None
-    review = editor.review(item, uz) if editor else None
+    uz, uz_source = (fetch_uzbek(client, item), "official") if settings.uzbek_enabled else (None, "none")
+    if settings.uzbek_enabled and not uz and not editor:
+        # нет ни официальной версии, ни Claude — бесплатный машинный перевод
+        uz, uz_source = uzbek_version(client, item)
+    if settings.uzbek_enabled and not uz:
+        log.info("  нет узбекской версии, пост только на русском: %s", item.url)
+    review = editor.review(item, uz if uz_source == "official" else None) if editor else None
     if review and settings.uzbek_enabled and review.get("headline_uz"):
         # страховка: даже если модель сбилась на старую латиницу — приводим к новой
         uz = (to_new_latin(review["headline_uz"]), to_new_latin(review.get("summary_uz", "")))
@@ -108,7 +113,7 @@ def prepare(settings: Settings, state: State, client: httpx.Client, item: NewsIt
     data = asdict(item)
     data["published"] = item.published.isoformat() if item.published else None
     data["text"] = item.text[:3000]
-    return {"kind": "news", "item": data, "review": review, "uz": list(uz) if uz else None,
+    return {"kind": "news", "item": data, "review": review, "uz": list(uz) if uz else None, "uz_source": uz_source,
             "importance": importance, "queued_at": time.time(), "attempts": 0}
 
 
@@ -217,6 +222,9 @@ def render(settings: Settings, state: State, client: httpx.Client, entry: dict) 
     item = _item_from(entry)
     review = entry.get("review")
     uz = tuple(entry["uz"]) if entry.get("uz") else None
+    if settings.uzbek_enabled and not uz and not review:
+        # запись попала в очередь без узбекской версии — последняя попытка перед публикацией
+        uz, _ = uzbek_version(client, item)
     image = None
     if settings.images_enabled:
         try:

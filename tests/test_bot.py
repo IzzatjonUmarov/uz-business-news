@@ -244,12 +244,14 @@ def test_uzbek_latin_helpers():
     assert to_new_latin("O‘ZBEKISTON, SHAHAR, Shavkat, Chorvoq") == "ÖZBEKISTON, ŞAHAR, Şavkat, Çorvoq"
     assert to_new_latin("ta’lim, e'tibor, sun`iy, Is’hoq") == "taʼlim, eʼtibor, sunʼiy, Ishoq"
     assert to_new_latin("eksportchilarni qo‘llab-quvvatlash, ishchi") == "eksportçilarni qöllab-quvvatlaş, işçi"
+    assert to_new_latin("O&#39;zbekiston") == "Özbekiston"
+    assert to_new_latin("Özbеkiston Rеspublikasi") == "Özbekiston Respublikasi"            # кириллическая «е»
     assert to_new_latin("Deutsche Bank, Wyndham, Bosch, Shanghai") == "Deutsche Bank, Wyndham, Bosch, Şanghai"
     assert is_russian_not_uzbek("Саммит в Анкаре: новые направления сотрудничества")
     assert not is_russian_not_uzbek("Ўзбекистон ва Германия ҳамкорлиги")
     assert looks_uzbek_latin("Biznes uchun «Konstruktor» tarifi", "Тариф «Конструктор»")
     assert not looks_uzbek_latin("Тариф «Конструктор» для бизнеса", "Тариф")
-    assert uz_url_candidates("https://bank.uz/ru/news/abc") == ["https://bank.uz/uz/news/abc"]
+    assert uz_url_candidates("https://bank.uz/ru/news/abc") == ["https://bank.uz/uz/news/abc", "https://bank.uz/news/abc"]
     assert uz_url_candidates("https://ru.bank.uz/news/abc") == ["https://uz.bank.uz/news/abc"]
     assert uz_url_candidates("https://bank.uz/press-center/news/abc") == ["https://bank.uz/uz/press-center/news/abc"]
 
@@ -288,3 +290,36 @@ def test_rule_importance():
 def test_english_leading_date():
     from bot.fetch import parse_date
     assert parse_date("October 13, 2026").date().isoformat() == "2026-10-13"
+
+
+def test_uz_alternates_and_same_news():
+    from bs4 import BeautifulSoup
+    from bot.fetch import uz_alternates
+    from bot.uzbek import same_news
+    html = """<html><head><link rel="alternate" hreflang="uz-UZ" href="/uz/yangiliklar/70931-x">
+      <link rel="alternate" hreflang="en" href="/en/news/70932"></head><body>
+      <a href="/uz/press_center/news/">O’zbekcha</a><a href="/uz/press_center/news/deposit-22/">UZ</a></body></html>"""
+    found = uz_alternates(BeautifulSoup(html, "lxml"), "https://bank.uz/ru/press_center/news/deposit-22/")
+    assert found == ["https://bank.uz/uz/yangiliklar/70931-x", "https://bank.uz/uz/press_center/news/deposit-22/"]
+    ru = "За 9 месяцев 2026 года выловлено 270,8 тыс. тонн рыбы, рост 12%"
+    assert same_news(ru, "2026-yil 9 oyida 270,8 ming tonna baliq ovlandi, 12% o‘sish")
+    assert not same_news(ru, "2026-yil 10 oyida sanoat korxonalari 154 ta loyiha amalga oshirdi")
+
+
+def test_machine_translation_fallback():
+    from bot.translate import translate_ru_uz
+    from bot.uzbek import uzbek_version
+
+    def handler(request):
+        if request.url.host == "translate.googleapis.com":
+            return httpx.Response(429)
+        if request.url.host == "api.mymemory.translated.net":
+            return httpx.Response(200, json={"responseStatus": 200, "quotaFinished": False,
+                                             "responseData": {"translatedText": "Bank yangi omonatni ishga tushirdi"}})
+        return httpx.Response(404)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    assert translate_ru_uz(client, "Банк запустил новый депозит") == "Bank yangi omonatni ishga tushirdi"
+    item = NewsItem("tbc", "TBC", "bank", "https://tbcbank.uz/ru/news/1", "Банк запустил новый депозит")
+    uz, source = uzbek_version(client, item)
+    assert source == "machine" and uz[0] == "Bank yangi omonatni işga tuşirdi"   # уже новая латиница
